@@ -130,6 +130,23 @@ public class Main {
         System.out.println("\u001B[32mBackground monitoring stopped.\u001B[0m");
     }
 
+    private static boolean isValidIpOrHostname(String ip) {
+        if (ip == null || ip.trim().isEmpty()) {
+            return false;
+        }
+        ip = ip.trim();
+
+        String ipv4Pattern = "^(?:(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(?:25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$";
+        String ipv6Pattern = "^(?:[0-9a-fA-F]{1,4}:){7}[0-9a-fA-F]{1,4}$|" +
+                             "^((?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?::((?:[0-9a-fA-F]{1,4}:){0,6}[0-9a-fA-F]{1,4})?$";
+        String hostnamePattern = "^(?=.{1,253}$)(?:[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?\\.)*[a-zA-Z0-9](?:[a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?$";
+
+        if (ip.matches("^[0-9.]+$")) {
+            return ip.matches(ipv4Pattern);
+        }
+        return ip.matches(ipv4Pattern) || ip.matches(ipv6Pattern) || ip.matches(hostnamePattern);
+    }
+
     public static void main(String[] args) throws Exception {
         Scanner sc = new Scanner(System.in);
         MonitorService ms = new MonitorService();
@@ -159,8 +176,32 @@ public class Main {
                 case 1:
                     System.out.print("Name: ");
                     String n = sc.nextLine();
-                    System.out.print("IP/Hostname: ");
-                    String ip = sc.nextLine();
+                    if (n.trim().isEmpty()) {
+                        System.out.println("\u001B[31mName cannot be empty. Operation cancelled.\u001B[0m");
+                        break;
+                    }
+                    String ip = "";
+                    while (true) {
+                        System.out.print("IP/Hostname: ");
+                        ip = sc.nextLine().trim();
+                        if (ip.isEmpty()) {
+                            System.out.println("\u001B[31mIP/Hostname cannot be empty.\u001B[0m");
+                            continue;
+                        }
+                        if (ip.equalsIgnoreCase("cancel")) {
+                            System.out.println("\u001B[33mOperation cancelled.\u001B[0m");
+                            ip = null;
+                            break;
+                        }
+                        if (isValidIpOrHostname(ip)) {
+                            break;
+                        } else {
+                            System.out.println("\u001B[31mInvalid IP/Hostname format. Please enter a valid IPv4, IPv6, or domain name (or type 'cancel').\u001B[0m");
+                        }
+                    }
+                    if (ip == null) {
+                        break;
+                    }
                     System.out.print("Type: ");
                     String t = sc.nextLine();
                     devices.add(new Device(n, ip, t));

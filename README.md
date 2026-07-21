@@ -65,7 +65,9 @@ java Main
 
 ## Interactive Menu Options
 
-1. **Add Device**: Register a new device to be monitored by providing its Name, IP/Hostname, and Type (e.g. router, pc, server).
+1. **Add Device**: Register a new device to be monitored.
+   - **Input Validation**: The IP/Hostname input is strictly validated (supporting IPv4, IPv6, and domain names). If the input format is invalid, you will be prompted to re-enter it or type `cancel` to abort.
+   - **Fields**: Name (cannot be empty), IP/Hostname, and Type (e.g. router, pc, server).
 2. **View Devices**: Display details of all registered devices, including real-time performance indicators (Uptime, CPU, Memory, Latency, Packet Loss, Open Ports, and Health status).
 3. **Delete Device**: Remove a registered device from the monitoring list interactively.
 4. **Start/Stop Background Monitoring**: Toggle the periodic execution of the monitoring service (performs active ICMP pinging & port scans every 10 seconds).
