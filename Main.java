@@ -24,7 +24,7 @@ public class Main {
         MonitorService ms=new MonitorService();
 
         while(true){
-            System.out.println("\n1.Add Device\n2.View Devices\n3.Start Demo Monitoring\n4.View Alerts\n5.Dashboard\n6.Exit");
+            System.out.println("\n1.Add Device\n2.View Devices\n3.Delete Device\n4.Start Demo Monitoring\n5.View Alerts\n6.Dashboard\n7.Exit");
             System.out.print("Choice: ");
             int ch=sc.nextInt();
             sc.nextLine();
@@ -41,10 +41,39 @@ public class Main {
                     break;
 
                 case 2:
-                    for(Device d:devices) System.out.println(d);
+                    if(devices.isEmpty()){
+                        System.out.println("No devices added yet.");
+                    } else {
+                        for(Device d:devices) System.out.println(d);
+                    }
                     break;
 
                 case 3:
+                    if(devices.isEmpty()){
+                        System.out.println("No devices to delete.");
+                        break;
+                    }
+                    System.out.println("Select a device to delete:");
+                    for(int i=0;i<devices.size();i++){
+                        System.out.println((i+1)+". "+devices.get(i).name+" ["+devices.get(i).ip+"]");
+                    }
+                    System.out.print("Choice: ");
+                    if(sc.hasNextInt()){
+                        int index=sc.nextInt()-1;
+                        sc.nextLine();
+                        if(index>=0 && index<devices.size()){
+                            Device removed=devices.remove(index);
+                            System.out.println("Removed device: "+removed.name);
+                        } else {
+                            System.out.println("Invalid selection.");
+                        }
+                    } else {
+                        System.out.println("Invalid input.");
+                        sc.nextLine();
+                    }
+                    break;
+
+                case 4:
                     if(devices.isEmpty()){
                         System.out.println("Add devices first.");
                         break;
@@ -64,16 +93,16 @@ public class Main {
                     }
                     break;
 
-                case 4:
+                case 5:
                     if(alerts.isEmpty()) System.out.println("No alerts.");
                     else for(String a:alerts) System.out.println(a);
                     break;
 
-                case 5:
+                case 6:
                     dashboard();
                     break;
 
-                case 6:
+                case 7:
                     System.exit(0);
             }
         }
