@@ -2,6 +2,8 @@ package com.networkmonitor.controller;
 
 import com.networkmonitor.dto.DeviceRequestDto;
 import com.networkmonitor.dto.DeviceResponseDto;
+import com.networkmonitor.entity.DeviceStatus;
+import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.service.DeviceService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -21,8 +23,11 @@ public class DeviceController {
     }
 
     @GetMapping
-    public ResponseEntity<List<DeviceResponseDto>> getAllDevices() {
-        return ResponseEntity.ok(deviceService.getAllDevices());
+    public ResponseEntity<List<DeviceResponseDto>> getAllDevices(
+            @RequestParam(required = false) String search,
+            @RequestParam(required = false) DeviceType type,
+            @RequestParam(required = false) DeviceStatus status) {
+        return ResponseEntity.ok(deviceService.getAllDevices(search, type, status));
     }
 
     @GetMapping("/{id}")
@@ -43,9 +48,15 @@ public class DeviceController {
         return ResponseEntity.ok(deviceService.updateDevice(id, dto));
     }
 
+    @PatchMapping("/{id}/toggle-monitoring")
+    public ResponseEntity<DeviceResponseDto> toggleMonitoring(@PathVariable Long id) {
+        return ResponseEntity.ok(deviceService.toggleMonitoring(id));
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<Void> deleteDevice(@PathVariable Long id) {
         deviceService.deleteDevice(id);
         return ResponseEntity.noContent().build();
     }
 }
+

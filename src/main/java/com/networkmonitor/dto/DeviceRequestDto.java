@@ -13,7 +13,7 @@ public class DeviceRequestDto {
 
     @NotBlank(message = "IP Address is required")
     @Pattern(
-        regexp = "^((25[0-5]|(2[0-4]|1[0-9]|[1-9]?[0-9]))\\.){3}(25[0-5]|(2[0-4]|1[0-9]|[1-9]?[0-9]))$",
+        regexp = "^((25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)\\.){3}(25[0-5]|2[0-4][0-9]|[01]?[0-9][0-9]?)$",
         message = "Invalid IPv4 address format"
     )
     private String ipAddress;

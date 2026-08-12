@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.networkmonitor.NetworkMonitorApplicationTests" time="3.82" tests="1" errors="0" skipped="0" failures="0">
+<testsuite xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="https://maven.apache.org/surefire/maven-surefire-plugin/xsd/surefire-test-report.xsd" version="3.0.2" name="com.networkmonitor.service.DeviceServiceTest" time="0.264" tests="8" errors="0" skipped="0" failures="0">
   <properties>
     <property name="java.specification.version" value="21"/>
     <property name="sun.jnu.encoding" value="UTF-8"/>
@@ -62,43 +62,12 @@
     <property name="java.class.version" value="65.0"/>
     <property name="LOGGED_APPLICATION_NAME" value="[network-device-monitoring] "/>
   </properties>
-  <testcase name="contextLoads" classname="com.networkmonitor.NetworkMonitorApplicationTests" time="0.08">
-    <system-out><![CDATA[2026-08-12T22:25:56.722+05:30  INFO 487924 --- [network-device-monitoring] [           main] t.c.s.AnnotationConfigContextLoaderUtils : Could not detect default configuration classes for test class [com.networkmonitor.NetworkMonitorApplicationTests]: NetworkMonitorApplicationTests does not declare any static, non-private, non-final, nested classes annotated with @Configuration.
-2026-08-12T22:25:56.743+05:30  INFO 487924 --- [network-device-monitoring] [           main] .b.t.c.SpringBootTestContextBootstrapper : Found @SpringBootConfiguration com.networkmonitor.NetworkMonitorApplication for test class com.networkmonitor.NetworkMonitorApplicationTests
-
-  .   ____          _            __ _ _
- /\\ / ___'_ __ _ _(_)_ __  __ _ \ \ \ \
-( ( )\___ | '_ | '_| | '_ \/ _` | \ \ \ \
- \\/  ___)| |_)| | | | | || (_| |  ) ) ) )
-  '  |____| .__|_| |_|_| |_\__, | / / / /
- =========|_|==============|___/=/_/_/_/
-
- :: Spring Boot ::                (v3.4.2)
-
-2026-08-12T22:25:56.832+05:30  INFO 487924 --- [network-device-monitoring] [           main] c.n.NetworkMonitorApplicationTests       : Starting NetworkMonitorApplicationTests using Java 21.0.11-ea with PID 487924 (started by kishore in /run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo)
-2026-08-12T22:25:56.833+05:30  INFO 487924 --- [network-device-monitoring] [           main] c.n.NetworkMonitorApplicationTests       : No active profile set, falling back to 1 default profile: "default"
-2026-08-12T22:25:57.332+05:30  INFO 487924 --- [network-device-monitoring] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
-2026-08-12T22:25:57.424+05:30  INFO 487924 --- [network-device-monitoring] [           main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 71 ms. Found 1 JPA repository interface.
-2026-08-12T22:25:57.855+05:30  INFO 487924 --- [network-device-monitoring] [           main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
-2026-08-12T22:25:57.932+05:30  INFO 487924 --- [network-device-monitoring] [           main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 6.6.5.Final
-2026-08-12T22:25:57.971+05:30  INFO 487924 --- [network-device-monitoring] [           main] o.h.c.internal.RegionFactoryInitiator    : HHH000026: Second-level cache disabled
-2026-08-12T22:25:58.122+05:30  INFO 487924 --- [network-device-monitoring] [           main] o.s.o.j.p.SpringPersistenceUnitInfo      : No LoadTimeWeaver setup: ignoring JPA class transformer
-2026-08-12T22:25:58.164+05:30  INFO 487924 --- [network-device-monitoring] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
-2026-08-12T22:25:58.629+05:30  INFO 487924 --- [network-device-monitoring] [           main] com.zaxxer.hikari.pool.HikariPool        : HikariPool-1 - Added connection org.postgresql.jdbc.PgConnection@73c6ae15
-2026-08-12T22:25:58.631+05:30  INFO 487924 --- [network-device-monitoring] [           main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
-2026-08-12T22:25:58.673+05:30  WARN 487924 --- [network-device-monitoring] [           main] org.hibernate.orm.deprecation            : HHH90000025: PostgreSQLDialect does not need to be specified explicitly using 'hibernate.dialect' (remove the property setting and it will be selected by default)
-2026-08-12T22:25:58.707+05:30  INFO 487924 --- [network-device-monitoring] [           main] org.hibernate.orm.connections.pooling    : HHH10001005: Database info:
-	Database JDBC URL [Connecting through datasource 'HikariDataSource (HikariPool-1)']
-	Database driver: undefined/unknown
-	Database version: 18.4
-	Autocommit mode: undefined/unknown
-	Isolation level: undefined/unknown
-	Minimum pool size: undefined/unknown
-	Maximum pool size: undefined/unknown
-2026-08-12T22:25:59.728+05:30  INFO 487924 --- [network-device-monitoring] [           main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000489: No JTA platform available (set 'hibernate.transaction.jta.platform' to enable JTA platform integration)
-2026-08-12T22:25:59.775+05:30  INFO 487924 --- [network-device-monitoring] [           main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
-2026-08-12T22:26:00.207+05:30  WARN 487924 --- [network-device-monitoring] [           main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
-2026-08-12T22:26:00.454+05:30  INFO 487924 --- [network-device-monitoring] [           main] c.n.NetworkMonitorApplicationTests       : Started NetworkMonitorApplicationTests in 3.695 seconds (process running for 9.887)
-]]></system-out>
-  </testcase>
+  <testcase name="createDevice_DuplicateIp_ThrowsException" classname="com.networkmonitor.service.DeviceServiceTest" time="0.226"/>
+  <testcase name="toggleMonitoring_Success" classname="com.networkmonitor.service.DeviceServiceTest" time="0.005"/>
+  <testcase name="getDeviceById_NotFound_ThrowsException" classname="com.networkmonitor.service.DeviceServiceTest" time="0.003"/>
+  <testcase name="getAllDevices_Success" classname="com.networkmonitor.service.DeviceServiceTest" time="0.013"/>
+  <testcase name="createDevice_InvalidIp_ThrowsException" classname="com.networkmonitor.service.DeviceServiceTest" time="0.002"/>
+  <testcase name="createDevice_Success" classname="com.networkmonitor.service.DeviceServiceTest" time="0.003"/>
+  <testcase name="deleteDevice_Success" classname="com.networkmonitor.service.DeviceServiceTest" time="0.002"/>
+  <testcase name="getDeviceById_Success" classname="com.networkmonitor.service.DeviceServiceTest" time="0.003"/>
 </testsuite>
