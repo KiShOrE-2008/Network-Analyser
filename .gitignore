@@ -22,3 +22,7 @@ hs_err_pid*
 out/
 devices.txt
 
+# Maven build outputs
+target/
+
+
