@@ -36,6 +36,7 @@ public class DeviceMonitoringService {
     private final PortScannerService portScannerService;
     private final HealthAnalyzerService healthAnalyzerService;
     private final AlertService alertService;
+    private final WebSocketNotificationService notificationService;
 
     public DeviceMonitoringService(
             DeviceRepository deviceRepository,
@@ -44,7 +45,8 @@ public class DeviceMonitoringService {
             PingService pingService,
             PortScannerService portScannerService,
             HealthAnalyzerService healthAnalyzerService,
-            AlertService alertService) {
+            AlertService alertService,
+            WebSocketNotificationService notificationService) {
         this.deviceRepository = deviceRepository;
         this.metricRepository = metricRepository;
         this.portStatusRepository = portStatusRepository;
@@ -52,6 +54,7 @@ public class DeviceMonitoringService {
         this.portScannerService = portScannerService;
         this.healthAnalyzerService = healthAnalyzerService;
         this.alertService = alertService;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -98,6 +101,9 @@ public class DeviceMonitoringService {
         dto.setPacketLossPercent(pingResult.getPacketLossPercent());
         dto.setDeviceStatus(device.getStatus());
         dto.setCheckedAt(pingResult.getTimestamp());
+
+        // Push Real-time WebSocket Event
+        notificationService.notifyMetricUpdate(dto);
 
         return dto;
     }

@@ -54,6 +54,9 @@ class DeviceMonitoringServiceTest {
     @Mock
     private AlertService alertService;
 
+    @Mock
+    private WebSocketNotificationService notificationService;
+
     @InjectMocks
     private DeviceMonitoringService deviceMonitoringService;
 

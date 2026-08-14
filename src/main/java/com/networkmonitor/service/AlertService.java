@@ -16,9 +16,11 @@ import java.util.stream.Collectors;
 public class AlertService {
 
     private final AlertRepository alertRepository;
+    private final WebSocketNotificationService notificationService;
 
-    public AlertService(AlertRepository alertRepository) {
+    public AlertService(AlertRepository alertRepository, WebSocketNotificationService notificationService) {
         this.alertRepository = alertRepository;
+        this.notificationService = notificationService;
     }
 
     @Transactional
@@ -36,7 +38,8 @@ public class AlertService {
             for (Alert openAlert : openAlerts) {
                 openAlert.setResolved(true);
                 openAlert.setResolvedAt(now);
-                alertRepository.save(openAlert);
+                Alert savedAlert = alertRepository.save(openAlert);
+                notificationService.notifyAlertUpdate(mapToDto(savedAlert));
             }
 
             // Create recovery event
@@ -48,7 +51,8 @@ public class AlertService {
             );
             recoveryAlert.setResolved(true);
             recoveryAlert.setResolvedAt(now);
-            alertRepository.save(recoveryAlert);
+            Alert savedRecovery = alertRepository.save(recoveryAlert);
+            notificationService.notifyAlertUpdate(mapToDto(savedRecovery));
 
         } else if (currentHealth == HealthStatus.CRITICAL) {
             AlertType type = (!pingResult.isReachable()) ? AlertType.DEVICE_OFFLINE : AlertType.PACKET_LOSS;
@@ -72,7 +76,8 @@ public class AlertService {
 
         if (!existsSameType) {
             Alert alert = new Alert(device, type, severity, message);
-            alertRepository.save(alert);
+            Alert saved = alertRepository.save(alert);
+            notificationService.notifyAlertUpdate(mapToDto(saved));
         }
     }
 
@@ -115,6 +120,9 @@ public class AlertService {
     }
 
     private AlertResponseDto mapToDto(Alert alert) {
+        if (alert == null) {
+            return null;
+        }
         AlertResponseDto dto = new AlertResponseDto();
         dto.setId(alert.getId());
         dto.setDeviceId(alert.getDevice().getId());

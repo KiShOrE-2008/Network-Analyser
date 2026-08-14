@@ -23,12 +23,15 @@ class AlertServiceTest {
     @Mock
     private AlertRepository alertRepository;
 
+    @Mock
+    private WebSocketNotificationService notificationService;
+
     private AlertService alertService;
     private Device sampleDevice;
 
     @BeforeEach
     void setUp() {
-        alertService = new AlertService(alertRepository);
+        alertService = new AlertService(alertRepository, notificationService);
 
         sampleDevice = new Device();
         sampleDevice.setId(1L);
@@ -42,6 +45,7 @@ class AlertServiceTest {
     void processStateTransition_HealthyToCritical_CreatesAlert() {
         PingResult result = new PingResult("192.168.1.1", false, 0.0, 100.0);
         when(alertRepository.findByDeviceIdAndIsResolvedFalse(1L)).thenReturn(new ArrayList<>());
+        when(alertRepository.save(any(Alert.class))).thenAnswer(inv -> inv.getArgument(0));
 
         alertService.processStateTransition(sampleDevice, HealthStatus.HEALTHY, HealthStatus.CRITICAL, result);
 
@@ -56,6 +60,7 @@ class AlertServiceTest {
         openAlert.setId(5L);
 
         when(alertRepository.findByDeviceIdAndIsResolvedFalse(1L)).thenReturn(List.of(openAlert));
+        when(alertRepository.save(any(Alert.class))).thenAnswer(inv -> inv.getArgument(0));
 
         alertService.processStateTransition(sampleDevice, HealthStatus.CRITICAL, HealthStatus.HEALTHY, result);
 
