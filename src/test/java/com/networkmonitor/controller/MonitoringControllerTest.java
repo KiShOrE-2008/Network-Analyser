@@ -4,6 +4,8 @@ import com.networkmonitor.dto.MetricResponseDto;
 import com.networkmonitor.dto.PingCheckResponseDto;
 import com.networkmonitor.entity.DeviceStatus;
 import com.networkmonitor.exception.ResourceNotFoundException;
+import com.networkmonitor.monitoring.NmapService;
+import com.networkmonitor.repository.DeviceRepository;
 import com.networkmonitor.service.DeviceMonitoringService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -32,6 +34,12 @@ class MonitoringControllerTest {
 
     @MockitoBean
     private DeviceMonitoringService monitoringService;
+
+    @MockitoBean
+    private DeviceRepository deviceRepository;
+
+    @MockitoBean
+    private NmapService nmapService;
 
     private PingCheckResponseDto pingResponseDto;
 
