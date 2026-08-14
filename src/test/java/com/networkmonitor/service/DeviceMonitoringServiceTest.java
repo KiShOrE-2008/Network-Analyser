@@ -9,8 +9,10 @@ import com.networkmonitor.entity.MonitoringMetric;
 import com.networkmonitor.exception.ResourceNotFoundException;
 import com.networkmonitor.monitoring.PingResult;
 import com.networkmonitor.monitoring.PingService;
+import com.networkmonitor.monitoring.PortScannerService;
 import com.networkmonitor.repository.DeviceRepository;
 import com.networkmonitor.repository.MonitoringMetricRepository;
+import com.networkmonitor.repository.PortStatusRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -38,7 +40,19 @@ class DeviceMonitoringServiceTest {
     private MonitoringMetricRepository metricRepository;
 
     @Mock
+    private PortStatusRepository portStatusRepository;
+
+    @Mock
     private PingService pingService;
+
+    @Mock
+    private PortScannerService portScannerService;
+
+    @Mock
+    private HealthAnalyzerService healthAnalyzerService;
+
+    @Mock
+    private AlertService alertService;
 
     @InjectMocks
     private DeviceMonitoringService deviceMonitoringService;

@@ -15,7 +15,9 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 - ✅ **PHASE 4**: TCP Port Monitoring (Socket connection scanning for standard services: SSH, DNS, HTTP, HTTPS, SMB, MySQL, PostgreSQL, RDP, HTTP-Alt; persistence in `port_status`).
 - ✅ **PHASE 5**: Automatic Network Subnet Discovery (CIDR range parsing `/16` to `/32`, pluggable strategy pattern, concurrent multithreaded range scan, mass device import).
 - ✅ **PHASE 6**: Advanced Nmap Integration (System Nmap 7.99 process execution, XML DOM parser for ports, software versions, and OS fingerprinting).
-- ⏳ **PHASE 7** *(Next)*: Automatic Monitoring Scheduler.
+- ✅ **PHASE 7**: Automatic Bounded Monitoring Scheduler Engine (Background `@Scheduled` worker pool `10` threads, dynamic start/stop REST endpoints).
+- ✅ **PHASE 8**: Health Engine & State-Change Alerting (`HEALTHY`, `WARNING`, `CRITICAL` state rule analysis, alert deduplication, recovery auto-resolution, persistence in `alerts`).
+- ⏳ **PHASE 9 & 10** *(Next)*: Web Dashboard (React) & Real-Time WebSockets.
 
 ---
 
@@ -27,8 +29,9 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 | **Database** | PostgreSQL 16+ | Relational persistence for devices, metrics, ports, and alerts |
 | **ORM / Persistence** | Spring Data JPA / Hibernate | Entity mapping & transactional persistence |
 | **Network Tools** | Native ICMP Ping, Sockets, Nmap 7.99 | Network reachability, port scanning, & OS fingerprinting |
-| **Input Validation** | Jakarta Validation | DTO constraints, IPv4 regex, & CIDR prefix checks |
-| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 40 automated tests |
+| **Scheduler & Worker Pool** | Spring `@Scheduled` / `FixedThreadPool` | Bounded thread pool worker engine |
+| **Health & Alerting** | Rule Engine & Deduplication | State transition alerts & auto-recovery resolution |
+| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 53 automated tests |
 | **Architecture Doc** | [ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md) | Mermaid diagrams for system flow, components, and ERD |
 
 ---
@@ -43,8 +46,8 @@ PHASE 3  → Real Ping/ICMP Monitoring [COMPLETED]
 PHASE 4  → TCP Port Monitoring [COMPLETED]
 PHASE 5  → Subnet Network Discovery [COMPLETED]
 PHASE 6  → Nmap Integration [COMPLETED]
-PHASE 7  → Automatic Monitoring Scheduler
-PHASE 8  → Health & Alert Engine
+PHASE 7  → Automatic Monitoring Scheduler [COMPLETED]
+PHASE 8  → Health & Alert Engine [COMPLETED]
 PHASE 9  → Web Dashboard (React + TypeScript)
 PHASE 10 → Real-Time WebSockets
 PHASE 11 → SNMP Hardware Metrics
@@ -91,6 +94,20 @@ PHASE 16 → Docker & Docker Compose Deployment
 | `GET` | `/api/discovery/nmap/status` | Check Nmap binary availability & version | — |
 | `POST` | `/api/discovery/nmap` | Run advanced Nmap range scan | Request Body (`DiscoveryRequestDto`) |
 
+### Monitoring Scheduler (`/api/scheduler`)
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/scheduler/status` | Fetch background worker status, active pool size, and scan metrics |
+| `POST` | `/api/scheduler/start` | Enable automatic background monitoring cycle |
+| `POST` | `/api/scheduler/stop` | Pause automatic background monitoring cycle |
+
+### Health Alerts (`/api/alerts`)
+| Method | Endpoint | Description | Query Parameters |
+|---|---|---|---|
+| `GET` | `/api/alerts` | List active unresolved alerts | `includeResolved` (boolean) |
+| `GET` | `/api/alerts/device/{deviceId}` | List alert history for a device | — |
+| `PATCH` | `/api/alerts/{id}/resolve` | Manually acknowledge / resolve an alert | — |
+
 ---
 
 ## 🏗️ Getting Started
@@ -109,7 +126,7 @@ psql -U kishore -d myapp -c "SELECT 1;"
 
 ### Build & Run
 
-#### 1. Compile & Execute Test Suite (40/40 Tests)
+#### 1. Compile & Execute Test Suite (53/53 Tests)
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn clean package
 ```
@@ -121,25 +138,19 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn spring-boot:run
 
 The application will start on `http://localhost:8080`.
 
-#### 3. Test Endpoints
-```bash
-# Check system health
-curl http://localhost:8080/api/health
-
-# Check Nmap status
-curl http://localhost:8080/api/discovery/nmap/status
-```
-
 ---
 
 ## 🧪 Verification & Test Suite
 
-The project includes 40 unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
+The project includes 53 unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
 - `DeviceServiceTest` & `DeviceControllerTest`: Device CRUD, validation, and search specs.
 - `PingServiceTest` & `DeviceMonitoringServiceTest`: ICMP Ping engine, latency parsing, and metric storage.
 - `PortScannerServiceTest` & `MonitoringControllerTest`: TCP socket port scanning and REST APIs.
 - `SubnetCalculatorTest`, `DiscoveryServiceTest` & `DiscoveryControllerTest`: Subnet CIDR calculation, concurrent worker pools, and device import.
 - `NmapServiceTest`: DOM XML parsing for Nmap scan outputs.
+- `HealthAnalyzerServiceTest` & `AlertServiceTest`: Health status rule analysis, state transition alert deduplication, and recovery auto-resolution.
+- `MonitoringSchedulerServiceTest` & `SchedulerControllerTest`: Bounded background scheduler pool execution & REST endpoints.
+- `AlertControllerTest`: REST API endpoints for viewing and resolving alerts.
 - `NetworkMonitorApplicationTests`: Context loading and PostgreSQL Hikari connection pool verification.
 
 ---
@@ -151,11 +162,15 @@ src/
 ├── main/
 │   ├── java/com/networkmonitor/
 │   │   ├── NetworkMonitorApplication.java
+│   │   ├── config/
+│   │   │   └── MonitoringSchedulerConfig.java
 │   │   ├── controller/
+│   │   │   ├── AlertController.java
 │   │   │   ├── DeviceController.java
 │   │   │   ├── DiscoveryController.java
 │   │   │   ├── HealthCheckController.java
-│   │   │   └── MonitoringController.java
+│   │   │   ├── MonitoringController.java
+│   │   │   └── SchedulerController.java
 │   │   ├── discovery/
 │   │   │   ├── DiscoveryStrategy.java
 │   │   │   ├── NmapDiscoveryStrategy.java
@@ -163,6 +178,7 @@ src/
 │   │   │   ├── SubnetCalculator.java
 │   │   │   └── TcpDiscoveryStrategy.java
 │   │   ├── dto/
+│   │   │   ├── AlertResponseDto.java
 │   │   │   ├── DeviceRequestDto.java
 │   │   │   ├── DeviceResponseDto.java
 │   │   │   ├── DiscoveredDeviceDto.java
@@ -176,6 +192,9 @@ src/
 │   │   │   ├── PortScanResponseDto.java
 │   │   │   └── PortStatusDto.java
 │   │   ├── entity/
+│   │   │   ├── Alert.java
+│   │   │   ├── AlertSeverity.java
+│   │   │   ├── AlertType.java
 │   │   │   ├── Device.java
 │   │   │   ├── DeviceStatus.java
 │   │   │   ├── DeviceType.java
@@ -192,22 +211,28 @@ src/
 │   │   │   ├── PingService.java
 │   │   │   └── PortScannerService.java
 │   │   ├── repository/
+│   │   │   ├── AlertRepository.java
 │   │   │   ├── DeviceRepository.java
 │   │   │   ├── MonitoringMetricRepository.java
 │   │   │   └── PortStatusRepository.java
 │   │   └── service/
+│   │       ├── AlertService.java
 │   │       ├── DeviceMonitoringService.java
 │   │       ├── DeviceService.java
-│   │       └── DiscoveryService.java
+│   │       ├── DiscoveryService.java
+│   │       ├── HealthAnalyzerService.java
+│   │       └── MonitoringSchedulerService.java
 │   └── resources/
 │       └── application.properties
 └── test/
     └── java/com/networkmonitor/
         ├── NetworkMonitorApplicationTests.java
         ├── controller/
+        │   ├── AlertControllerTest.java
         │   ├── DeviceControllerTest.java
         │   ├── DiscoveryControllerTest.java
-        │   └── MonitoringControllerTest.java
+        │   ├── MonitoringControllerTest.java
+        │   └── SchedulerControllerTest.java
         ├── discovery/
         │   └── SubnetCalculatorTest.java
         ├── monitoring/
@@ -215,7 +240,10 @@ src/
         │   ├── PingServiceTest.java
         │   └── PortScannerServiceTest.java
         └── service/
+            ├── AlertServiceTest.java
             ├── DeviceMonitoringServiceTest.java
             ├── DeviceServiceTest.java
-            └── DiscoveryServiceTest.java
+            ├── DiscoveryServiceTest.java
+            ├── HealthAnalyzerServiceTest.java
+            └── MonitoringSchedulerServiceTest.java
 ```

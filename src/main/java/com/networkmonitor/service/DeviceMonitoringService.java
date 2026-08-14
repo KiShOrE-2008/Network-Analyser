@@ -6,6 +6,7 @@ import com.networkmonitor.dto.PortScanResponseDto;
 import com.networkmonitor.dto.PortStatusDto;
 import com.networkmonitor.entity.Device;
 import com.networkmonitor.entity.DeviceStatus;
+import com.networkmonitor.entity.HealthStatus;
 import com.networkmonitor.entity.MonitoringMetric;
 import com.networkmonitor.entity.PortStatus;
 import com.networkmonitor.entity.PortState;
@@ -33,18 +34,24 @@ public class DeviceMonitoringService {
     private final PortStatusRepository portStatusRepository;
     private final PingService pingService;
     private final PortScannerService portScannerService;
+    private final HealthAnalyzerService healthAnalyzerService;
+    private final AlertService alertService;
 
     public DeviceMonitoringService(
             DeviceRepository deviceRepository,
             MonitoringMetricRepository metricRepository,
             PortStatusRepository portStatusRepository,
             PingService pingService,
-            PortScannerService portScannerService) {
+            PortScannerService portScannerService,
+            HealthAnalyzerService healthAnalyzerService,
+            AlertService alertService) {
         this.deviceRepository = deviceRepository;
         this.metricRepository = metricRepository;
         this.portStatusRepository = portStatusRepository;
         this.pingService = pingService;
         this.portScannerService = portScannerService;
+        this.healthAnalyzerService = healthAnalyzerService;
+        this.alertService = alertService;
     }
 
     @Transactional
@@ -54,14 +61,22 @@ public class DeviceMonitoringService {
 
         PingResult pingResult = pingService.ping(device.getIpAddress());
 
-        // Update Device Status
+        HealthStatus previousHealth = device.getHealthStatus();
+
+        // Update Device Status & Health
         if (pingResult.isReachable()) {
             device.setStatus(DeviceStatus.ONLINE);
             device.setLastSeenAt(pingResult.getTimestamp());
         } else {
             device.setStatus(DeviceStatus.OFFLINE);
         }
+
+        HealthStatus currentHealth = healthAnalyzerService.evaluateHealth(pingResult);
+        device.setHealthStatus(currentHealth);
         deviceRepository.save(device);
+
+        // Process State Transitions & Alerting
+        alertService.processStateTransition(device, previousHealth, currentHealth, pingResult);
 
         // Save Metric Entry to Database
         MonitoringMetric metric = new MonitoringMetric(
