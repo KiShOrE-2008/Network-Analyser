@@ -10,8 +10,12 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 
 - ✅ **PHASE 0**: Requirements & Architecture frozen ([ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md)).
 - ✅ **PHASE 1**: Spring Boot 3.4.2 + PostgreSQL Integration with core `Device` JPA Entity.
-- ✅ **PHASE 2**: Complete Device Management REST APIs, validation engine (IPv4 Regex & octet bounds), JPA Specifications search/filtering, and unit/integration test suite.
-- ⏳ **PHASE 3** *(Next)*: Real Ping / ICMP Monitoring Service.
+- ✅ **PHASE 2**: Complete Device Management REST APIs, validation engine (IPv4 Regex & octet bounds), JPA Specifications search/filtering.
+- ✅ **PHASE 3**: Real Ping / ICMP Monitoring Engine (OS ping process parsing, latency measurement, packet loss %, metric persistence in `monitoring_metrics`).
+- ✅ **PHASE 4**: TCP Port Monitoring (Socket connection scanning for standard services: SSH, DNS, HTTP, HTTPS, SMB, MySQL, PostgreSQL, RDP, HTTP-Alt; persistence in `port_status`).
+- ✅ **PHASE 5**: Automatic Network Subnet Discovery (CIDR range parsing `/16` to `/32`, pluggable strategy pattern, concurrent multithreaded range scan, mass device import).
+- ✅ **PHASE 6**: Advanced Nmap Integration (System Nmap 7.99 process execution, XML DOM parser for ports, software versions, and OS fingerprinting).
+- ⏳ **PHASE 7** *(Next)*: Automatic Monitoring Scheduler.
 
 ---
 
@@ -20,10 +24,11 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 | Component | Technology | Description |
 |---|---|---|
 | **Backend Framework** | Java 21 / Spring Boot 3.4.2 | Core service layer, REST APIs, & async task processing |
-| **Database** | PostgreSQL 16+ | Relational persistence for devices, metrics, and alerts |
+| **Database** | PostgreSQL 16+ | Relational persistence for devices, metrics, ports, and alerts |
 | **ORM / Persistence** | Spring Data JPA / Hibernate | Entity mapping & transactional persistence |
-| **Input Validation** | Jakarta Validation | DTO constraints, IPv4 regex, & custom interval checks |
-| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & automated testing |
+| **Network Tools** | Native ICMP Ping, Sockets, Nmap 7.99 | Network reachability, port scanning, & OS fingerprinting |
+| **Input Validation** | Jakarta Validation | DTO constraints, IPv4 regex, & CIDR prefix checks |
+| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 40 automated tests |
 | **Architecture Doc** | [ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md) | Mermaid diagrams for system flow, components, and ERD |
 
 ---
@@ -34,10 +39,10 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 PHASE 0  → Requirements + Architecture [COMPLETED]
 PHASE 1  → Java/Spring Boot + PostgreSQL [COMPLETED]
 PHASE 2  → Device Management APIs [COMPLETED]
-PHASE 3  → Real Ping/ICMP Monitoring
-PHASE 4  → TCP Port Monitoring
-PHASE 5  → Subnet Network Discovery
-PHASE 6  → Nmap Integration
+PHASE 3  → Real Ping/ICMP Monitoring [COMPLETED]
+PHASE 4  → TCP Port Monitoring [COMPLETED]
+PHASE 5  → Subnet Network Discovery [COMPLETED]
+PHASE 6  → Nmap Integration [COMPLETED]
 PHASE 7  → Automatic Monitoring Scheduler
 PHASE 8  → Health & Alert Engine
 PHASE 9  → Web Dashboard (React + TypeScript)
@@ -69,19 +74,22 @@ PHASE 16 → Docker & Docker Compose Deployment
 | `PATCH` | `/api/devices/{id}/toggle-monitoring` | Toggle active monitoring state | — |
 | `DELETE` | `/api/devices/{id}` | Delete a device | — |
 
-#### Example Request Body (`POST /api/devices`)
-```json
-{
-  "name": "Core Gateway Router",
-  "ipAddress": "192.168.1.1",
-  "hostname": "gateway.internal",
-  "deviceType": "ROUTER",
-  "vendor": "Cisco",
-  "model": "ISR 4331",
-  "monitoringEnabled": true,
-  "scanInterval": 10
-}
-```
+### Real Ping & Port Monitoring (`/api/devices/{id}`)
+| Method | Endpoint | Description |
+|---|---|---|
+| `POST` | `/api/devices/{id}/check` | Perform real-time ICMP ping check on target device |
+| `GET` | `/api/devices/{id}/metrics` | Fetch historical latency and packet loss metric logs |
+| `POST` | `/api/devices/{id}/scan-ports` | Perform TCP port scan on standard service ports |
+| `GET` | `/api/devices/{id}/ports` | Fetch latest port status logs for device |
+| `POST` | `/api/devices/{id}/nmap-scan` | Perform advanced Nmap scan for single device |
+
+### Network Discovery & Nmap (`/api/discovery`)
+| Method | Endpoint | Description | Request Parameters |
+|---|---|---|---|
+| `POST` | `/api/discovery/scan` | Concurrent subnet CIDR range scan | `subnetCidr` (e.g. `192.168.1.0/24`), `strategy` (`PING`/`TCP`), `threads` |
+| `POST` | `/api/discovery/import` | Mass import discovered devices | JSON Array of `DeviceRequestDto` |
+| `GET` | `/api/discovery/nmap/status` | Check Nmap binary availability & version | — |
+| `POST` | `/api/discovery/nmap` | Run advanced Nmap range scan | Request Body (`DiscoveryRequestDto`) |
 
 ---
 
@@ -90,6 +98,7 @@ PHASE 16 → Docker & Docker Compose Deployment
 ### Prerequisites
 - **JDK 21** or higher installed.
 - **PostgreSQL** running locally on port `5432` with a database named `myapp` (or update `application.properties`).
+- **Nmap** binary installed (`/usr/bin/nmap`).
 - **Apache Maven 3.9+**.
 
 ### Database Setup
@@ -100,7 +109,7 @@ psql -U kishore -d myapp -c "SELECT 1;"
 
 ### Build & Run
 
-#### 1. Compile & Execute Unit Tests
+#### 1. Compile & Execute Test Suite (40/40 Tests)
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn clean package
 ```
@@ -112,19 +121,26 @@ JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn spring-boot:run
 
 The application will start on `http://localhost:8080`.
 
-#### 3. Test Health Endpoint
+#### 3. Test Endpoints
 ```bash
+# Check system health
 curl http://localhost:8080/api/health
+
+# Check Nmap status
+curl http://localhost:8080/api/discovery/nmap/status
 ```
 
 ---
 
 ## 🧪 Verification & Test Suite
 
-The project includes unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
-- `DeviceServiceTest`: Validates CRUD logic, duplicate IP rejection, IP octet bounds, and search specifications.
-- `DeviceControllerTest`: Validates REST endpoints, JSON serialization, and HTTP status codes (`200`, `201`, `204`, `400`, `404`).
-- `NetworkMonitorApplicationTests`: Verifies Spring context loading and PostgreSQL connection pool.
+The project includes 40 unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
+- `DeviceServiceTest` & `DeviceControllerTest`: Device CRUD, validation, and search specs.
+- `PingServiceTest` & `DeviceMonitoringServiceTest`: ICMP Ping engine, latency parsing, and metric storage.
+- `PortScannerServiceTest` & `MonitoringControllerTest`: TCP socket port scanning and REST APIs.
+- `SubnetCalculatorTest`, `DiscoveryServiceTest` & `DiscoveryControllerTest`: Subnet CIDR calculation, concurrent worker pools, and device import.
+- `NmapServiceTest`: DOM XML parsing for Nmap scan outputs.
+- `NetworkMonitorApplicationTests`: Context loading and PostgreSQL Hikari connection pool verification.
 
 ---
 
@@ -137,27 +153,69 @@ src/
 │   │   ├── NetworkMonitorApplication.java
 │   │   ├── controller/
 │   │   │   ├── DeviceController.java
-│   │   │   └── HealthCheckController.java
+│   │   │   ├── DiscoveryController.java
+│   │   │   ├── HealthCheckController.java
+│   │   │   └── MonitoringController.java
+│   │   ├── discovery/
+│   │   │   ├── DiscoveryStrategy.java
+│   │   │   ├── NmapDiscoveryStrategy.java
+│   │   │   ├── PingDiscoveryStrategy.java
+│   │   │   ├── SubnetCalculator.java
+│   │   │   └── TcpDiscoveryStrategy.java
 │   │   ├── dto/
 │   │   │   ├── DeviceRequestDto.java
-│   │   │   └── DeviceResponseDto.java
+│   │   │   ├── DeviceResponseDto.java
+│   │   │   ├── DiscoveredDeviceDto.java
+│   │   │   ├── DiscoveryRequestDto.java
+│   │   │   ├── DiscoveryResponseDto.java
+│   │   │   ├── MetricResponseDto.java
+│   │   │   ├── NmapHostResultDto.java
+│   │   │   ├── NmapPortResultDto.java
+│   │   │   ├── NmapScanResultDto.java
+│   │   │   ├── PingCheckResponseDto.java
+│   │   │   ├── PortScanResponseDto.java
+│   │   │   └── PortStatusDto.java
 │   │   ├── entity/
 │   │   │   ├── Device.java
 │   │   │   ├── DeviceStatus.java
 │   │   │   ├── DeviceType.java
-│   │   │   └── HealthStatus.java
+│   │   │   ├── HealthStatus.java
+│   │   │   ├── MonitoringMetric.java
+│   │   │   ├── PortState.java
+│   │   │   └── PortStatus.java
 │   │   ├── exception/
 │   │   │   ├── GlobalExceptionHandler.java
 │   │   │   └── ResourceNotFoundException.java
+│   │   ├── monitoring/
+│   │   │   ├── NmapService.java
+│   │   │   ├── PingResult.java
+│   │   │   ├── PingService.java
+│   │   │   └── PortScannerService.java
 │   │   ├── repository/
-│   │   │   └── DeviceRepository.java
+│   │   │   ├── DeviceRepository.java
+│   │   │   ├── MonitoringMetricRepository.java
+│   │   │   └── PortStatusRepository.java
 │   │   └── service/
-│   │       └── DeviceService.java
+│   │       ├── DeviceMonitoringService.java
+│   │       ├── DeviceService.java
+│   │       └── DiscoveryService.java
 │   └── resources/
 │       └── application.properties
 └── test/
     └── java/com/networkmonitor/
         ├── NetworkMonitorApplicationTests.java
-        ├── controller/DeviceControllerTest.java
-        └── service/DeviceServiceTest.java
+        ├── controller/
+        │   ├── DeviceControllerTest.java
+        │   ├── DiscoveryControllerTest.java
+        │   └── MonitoringControllerTest.java
+        ├── discovery/
+        │   └── SubnetCalculatorTest.java
+        ├── monitoring/
+        │   ├── NmapServiceTest.java
+        │   ├── PingServiceTest.java
+        │   └── PortScannerServiceTest.java
+        └── service/
+            ├── DeviceMonitoringServiceTest.java
+            ├── DeviceServiceTest.java
+            └── DiscoveryServiceTest.java
 ```
