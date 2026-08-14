@@ -5,9 +5,11 @@ import com.networkmonitor.dto.NmapScanResultDto;
 import com.networkmonitor.dto.PingCheckResponseDto;
 import com.networkmonitor.dto.PortScanResponseDto;
 import com.networkmonitor.dto.PortStatusDto;
+import com.networkmonitor.dto.SnmpMetricDto;
 import com.networkmonitor.entity.Device;
 import com.networkmonitor.exception.ResourceNotFoundException;
 import com.networkmonitor.monitoring.NmapService;
+import com.networkmonitor.monitoring.SnmpService;
 import com.networkmonitor.repository.DeviceRepository;
 import com.networkmonitor.service.DeviceMonitoringService;
 import org.springframework.http.ResponseEntity;
@@ -22,14 +24,17 @@ public class MonitoringController {
     private final DeviceMonitoringService monitoringService;
     private final DeviceRepository deviceRepository;
     private final NmapService nmapService;
+    private final SnmpService snmpService;
 
     public MonitoringController(
             DeviceMonitoringService monitoringService,
             DeviceRepository deviceRepository,
-            NmapService nmapService) {
+            NmapService nmapService,
+            SnmpService snmpService) {
         this.monitoringService = monitoringService;
         this.deviceRepository = deviceRepository;
         this.nmapService = nmapService;
+        this.snmpService = snmpService;
     }
 
     @PostMapping("/{id}/check")
@@ -66,6 +71,27 @@ public class MonitoringController {
         NmapScanResultDto result = nmapService.scanTarget(device.getIpAddress(), profile);
         return ResponseEntity.ok(result);
     }
+
+    @PostMapping("/{id}/snmp-check")
+    public ResponseEntity<SnmpMetricDto> performSnmpCheck(
+            @PathVariable Long id,
+            @RequestParam(required = false, defaultValue = "public") String community) {
+        Device device = deviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Device not found with id: " + id));
+
+        SnmpMetricDto metrics = snmpService.querySnmpMetrics(device.getId(), device.getIpAddress(), community);
+        return ResponseEntity.ok(metrics);
+    }
+
+    @GetMapping("/{id}/snmp")
+    public ResponseEntity<SnmpMetricDto> getDeviceSnmpMetrics(@PathVariable Long id) {
+        Device device = deviceRepository.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Device not found with id: " + id));
+
+        SnmpMetricDto metrics = snmpService.querySnmpMetrics(device.getId(), device.getIpAddress(), "public");
+        return ResponseEntity.ok(metrics);
+    }
 }
+
 
 

@@ -156,11 +156,11 @@ erDiagram
 
 ## 6. Implementation Milestones
 
-1. **Phase 0 & 1** (Current): Requirements, Architecture, Spring Boot setup, PostgreSQL connection, and core `Device` entity.
-2. **Phase 2**: Device Management APIs (CRUD operations & IP validation).
-3. **Phase 3**: Real Ping/ICMP Monitoring module & metric storage.
-4. **Phase 4**: TCP Port Monitoring & service reachability.
-5. **Phase 5 & 6**: Automatic Subnet Network Discovery & Nmap integration.
-6. **Phase 7 & 8**: Bounded Scheduler, Worker Pool, Health Engine, & State-change Alerting.
-7. **Phase 9 & 10**: React Dashboard UI & WebSockets.
-8. **Phase 11 — 17**: SNMP Metrics, Security, Reports, Dockerization, & Verification.
+1. ✅ **Phase 0 & 1**: Requirements, Architecture, Spring Boot 3.4.2 setup, PostgreSQL connection, and core `Device` entity.
+2. ✅ **Phase 2**: Device Management APIs (CRUD operations, IPv4 validation, Specification searching).
+3. ✅ **Phase 3**: Real Ping/ICMP Monitoring module & `monitoring_metrics` storage.
+4. ✅ **Phase 4**: TCP Port Monitoring & `port_status` service reachability.
+5. ✅ **Phase 5 & 6**: Automatic Subnet Network Discovery & Nmap XML process integration.
+6. ✅ **Phase 7 & 8**: Bounded Scheduler, Worker Pool, Health Rule Engine, & State-change Alerting (`alerts`).
+7. ✅ **Phase 9 & 10**: Single Page Web Dashboard UI & Real-Time STOMP WebSockets (`/ws-monitoring`).
+8. ✅ **Phase 11 — 17**: SNMP Hardware Metrics, Multi-Channel Notifications, Security, Analytics Reports & CSV Export, Dockerization (`Dockerfile` & `docker-compose.yml`), & 100% Automated Verification (58/58 tests passing).

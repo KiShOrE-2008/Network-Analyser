@@ -17,10 +17,15 @@ public class AlertService {
 
     private final AlertRepository alertRepository;
     private final WebSocketNotificationService notificationService;
+    private final NotificationService channelNotificationService;
 
-    public AlertService(AlertRepository alertRepository, WebSocketNotificationService notificationService) {
+    public AlertService(
+            AlertRepository alertRepository,
+            WebSocketNotificationService notificationService,
+            NotificationService channelNotificationService) {
         this.alertRepository = alertRepository;
         this.notificationService = notificationService;
+        this.channelNotificationService = channelNotificationService;
     }
 
     @Transactional
@@ -39,7 +44,8 @@ public class AlertService {
                 openAlert.setResolved(true);
                 openAlert.setResolvedAt(now);
                 Alert savedAlert = alertRepository.save(openAlert);
-                notificationService.notifyAlertUpdate(mapToDto(savedAlert));
+                AlertResponseDto dto = mapToDto(savedAlert);
+                notificationService.notifyAlertUpdate(dto);
             }
 
             // Create recovery event
@@ -52,7 +58,9 @@ public class AlertService {
             recoveryAlert.setResolved(true);
             recoveryAlert.setResolvedAt(now);
             Alert savedRecovery = alertRepository.save(recoveryAlert);
-            notificationService.notifyAlertUpdate(mapToDto(savedRecovery));
+            AlertResponseDto recDto = mapToDto(savedRecovery);
+            notificationService.notifyAlertUpdate(recDto);
+            channelNotificationService.dispatchAlertNotification(recDto);
 
         } else if (currentHealth == HealthStatus.CRITICAL) {
             AlertType type = (!pingResult.isReachable()) ? AlertType.DEVICE_OFFLINE : AlertType.PACKET_LOSS;
@@ -77,7 +85,9 @@ public class AlertService {
         if (!existsSameType) {
             Alert alert = new Alert(device, type, severity, message);
             Alert saved = alertRepository.save(alert);
-            notificationService.notifyAlertUpdate(mapToDto(saved));
+            AlertResponseDto dto = mapToDto(saved);
+            notificationService.notifyAlertUpdate(dto);
+            channelNotificationService.dispatchAlertNotification(dto);
         }
     }
 

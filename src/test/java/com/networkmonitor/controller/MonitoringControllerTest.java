@@ -5,6 +5,7 @@ import com.networkmonitor.dto.PingCheckResponseDto;
 import com.networkmonitor.entity.DeviceStatus;
 import com.networkmonitor.exception.ResourceNotFoundException;
 import com.networkmonitor.monitoring.NmapService;
+import com.networkmonitor.monitoring.SnmpService;
 import com.networkmonitor.repository.DeviceRepository;
 import com.networkmonitor.service.DeviceMonitoringService;
 import org.junit.jupiter.api.BeforeEach;
@@ -40,6 +41,9 @@ class MonitoringControllerTest {
 
     @MockitoBean
     private NmapService nmapService;
+
+    @MockitoBean
+    private SnmpService snmpService;
 
     private PingCheckResponseDto pingResponseDto;
 

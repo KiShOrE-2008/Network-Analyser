@@ -26,12 +26,15 @@ class AlertServiceTest {
     @Mock
     private WebSocketNotificationService notificationService;
 
+    @Mock
+    private NotificationService channelNotificationService;
+
     private AlertService alertService;
     private Device sampleDevice;
 
     @BeforeEach
     void setUp() {
-        alertService = new AlertService(alertRepository, notificationService);
+        alertService = new AlertService(alertRepository, notificationService, channelNotificationService);
 
         sampleDevice = new Device();
         sampleDevice.setId(1L);

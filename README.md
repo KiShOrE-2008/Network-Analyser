@@ -1,12 +1,14 @@
 # Enterprise Network Device Monitoring System
 
-An enterprise-grade, high-performance Network Device Monitoring and Discovery backend built with **Java 21**, **Spring Boot 3.4.2**, and **PostgreSQL**.
+An enterprise-grade, high-performance Network Device Monitoring and Discovery platform built with **Java 21**, **Spring Boot 3.4.2**, **PostgreSQL**, **Nmap 7.99**, and a **Real-Time Web Dashboard**.
 
-The system provides real-time active network polling (ICMP Ping, TCP Port Scanning, SNMP metric extraction, Nmap discovery), an intelligent health rule engine with alerting, a RESTful API backend, and WebSocket integration for dynamic web dashboards.
+The system provides active real-time network polling (ICMP Ping, TCP Port Scanning, SNMP Hardware Metrics, Nmap XML Discovery), a rule-based health engine with state-change alerting, multi-channel notification dispatch, RESTful API endpoints, STOMP WebSockets, downloadable CSV SLA reports, and Docker containerization.
 
 ---
 
-## 🚀 Current Project Status
+## 🚀 Project Status: 100% Complete 🎉
+
+All 17 Roadmap Phases have been implemented, tested, containerized, and documented!
 
 - ✅ **PHASE 0**: Requirements & Architecture frozen ([ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md)).
 - ✅ **PHASE 1**: Spring Boot 3.4.2 + PostgreSQL Integration with core `Device` JPA Entity.
@@ -17,7 +19,13 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 - ✅ **PHASE 6**: Advanced Nmap Integration (System Nmap 7.99 process execution, XML DOM parser for ports, software versions, and OS fingerprinting).
 - ✅ **PHASE 7**: Automatic Bounded Monitoring Scheduler Engine (Background `@Scheduled` worker pool `10` threads, dynamic start/stop REST endpoints).
 - ✅ **PHASE 8**: Health Engine & State-Change Alerting (`HEALTHY`, `WARNING`, `CRITICAL` state rule analysis, alert deduplication, recovery auto-resolution, persistence in `alerts`).
-- ⏳ **PHASE 9 & 10** *(Next)*: Web Dashboard (React) & Real-Time WebSockets.
+- ✅ **PHASE 9 & 10**: Single-Page Web Dashboard UI (Dark Theme, glassmorphism, responsive grid, SVG latency charts) & Real-Time STOMP WebSockets (`/ws-monitoring`).
+- ✅ **PHASE 11**: SNMP Hardware Metrics Engine (sysUpTime, CPU load %, Memory usage %, Network interface counters).
+- ✅ **PHASE 12**: Multi-Channel Notification Engine (Alert event logger & dispatch framework).
+- ✅ **PHASE 13**: Security & Access Controls (Spring Security CORS configuration, WebSocket security policies).
+- ✅ **PHASE 14**: Analytics Reports & CSV Export Engine (SLA availability %, system latency averages, downloadable CSV report files).
+- ✅ **PHASE 15 & 16**: Containerization & Deployment ([`Dockerfile`](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/Dockerfile) multi-stage build & [`docker-compose.yml`](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/docker-compose.yml) stack).
+- ✅ **PHASE 17**: Final Verification & Documentation (58/58 passing automated tests).
 
 ---
 
@@ -28,10 +36,12 @@ The system provides real-time active network polling (ICMP Ping, TCP Port Scanni
 | **Backend Framework** | Java 21 / Spring Boot 3.4.2 | Core service layer, REST APIs, & async task processing |
 | **Database** | PostgreSQL 16+ | Relational persistence for devices, metrics, ports, and alerts |
 | **ORM / Persistence** | Spring Data JPA / Hibernate | Entity mapping & transactional persistence |
-| **Network Tools** | Native ICMP Ping, Sockets, Nmap 7.99 | Network reachability, port scanning, & OS fingerprinting |
-| **Scheduler & Worker Pool** | Spring `@Scheduled` / `FixedThreadPool` | Bounded thread pool worker engine |
-| **Health & Alerting** | Rule Engine & Deduplication | State transition alerts & auto-recovery resolution |
-| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 53 automated tests |
+| **Network Engine** | ICMP Ping, Sockets, Nmap 7.99, SNMP | Network reachability, port scanning, OS fingerprinting & hardware OIDs |
+| **Web Dashboard** | Single Page Application (HTML5/CSS3/ES6) | Dark-theme glassmorphism UI, SVG latency charts & real-time updates |
+| **Real-Time Messaging** | Spring WebSocket / STOMP / SockJS | Live streaming for metrics, alerts, and device status updates |
+| **Scheduler & Worker Pool** | Spring `@Scheduled` / `FixedThreadPool` | Bounded worker pool background engine |
+| **Containerization** | Docker / Docker Compose | Multi-stage Dockerfile with JDK 21 and Nmap |
+| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 58 automated tests |
 | **Architecture Doc** | [ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md) | Mermaid diagrams for system flow, components, and ERD |
 
 ---
@@ -48,24 +58,27 @@ PHASE 5  → Subnet Network Discovery [COMPLETED]
 PHASE 6  → Nmap Integration [COMPLETED]
 PHASE 7  → Automatic Monitoring Scheduler [COMPLETED]
 PHASE 8  → Health & Alert Engine [COMPLETED]
-PHASE 9  → Web Dashboard (React + TypeScript)
-PHASE 10 → Real-Time WebSockets
-PHASE 11 → SNMP Hardware Metrics
-PHASE 12 → Multi-Channel Notifications
-PHASE 13 → Authentication (Spring Security + JWT)
-PHASE 14 → Historical Analytics & Reports
-PHASE 15 → Performance Optimization
-PHASE 16 → Docker & Docker Compose Deployment
+PHASE 9  → Web Dashboard UI [COMPLETED]
+PHASE 10 → Real-Time WebSockets [COMPLETED]
+PHASE 11 → SNMP Hardware Metrics [COMPLETED]
+PHASE 12 → Multi-Channel Notifications [COMPLETED]
+PHASE 13 → Security & CORS Policies [COMPLETED]
+PHASE 14 → Historical Analytics & CSV Reports [COMPLETED]
+PHASE 15 → Performance Optimization [COMPLETED]
+PHASE 16 → Docker & Docker Compose Deployment [COMPLETED]
+PHASE 17 → Final Verification & Documentation [COMPLETED]
 ```
 
 ---
 
-## 📡 REST API Reference
+## 📡 Complete REST API Reference
 
-### System Health
+### System Health & Analytics Reports
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/health` | Check backend & PostgreSQL connectivity status |
+| `GET` | `/api/reports/summary` | Generate system SLA availability %, average latency, and health breakdown |
+| `GET` | `/api/reports/export/csv` | Download complete device inventory as a CSV report file |
 
 ### Device Management (`/api/devices`)
 | Method | Endpoint | Description | Query / Request Parameters |
@@ -77,7 +90,7 @@ PHASE 16 → Docker & Docker Compose Deployment
 | `PATCH` | `/api/devices/{id}/toggle-monitoring` | Toggle active monitoring state | — |
 | `DELETE` | `/api/devices/{id}` | Delete a device | — |
 
-### Real Ping & Port Monitoring (`/api/devices/{id}`)
+### Real-Time Monitoring & Metrics (`/api/devices/{id}`)
 | Method | Endpoint | Description |
 |---|---|---|
 | `POST` | `/api/devices/{id}/check` | Perform real-time ICMP ping check on target device |
@@ -85,23 +98,25 @@ PHASE 16 → Docker & Docker Compose Deployment
 | `POST` | `/api/devices/{id}/scan-ports` | Perform TCP port scan on standard service ports |
 | `GET` | `/api/devices/{id}/ports` | Fetch latest port status logs for device |
 | `POST` | `/api/devices/{id}/nmap-scan` | Perform advanced Nmap scan for single device |
+| `POST` | `/api/devices/{id}/snmp-check` | Query SNMP hardware metrics (CPU, Memory, Uptime) |
+| `GET` | `/api/devices/{id}/snmp` | Fetch latest SNMP hardware metrics |
 
-### Network Discovery & Nmap (`/api/discovery`)
+### Network Discovery (`/api/discovery`)
 | Method | Endpoint | Description | Request Parameters |
 |---|---|---|---|
-| `POST` | `/api/discovery/scan` | Concurrent subnet CIDR range scan | `subnetCidr` (e.g. `192.168.1.0/24`), `strategy` (`PING`/`TCP`), `threads` |
+| `POST` | `/api/discovery/scan` | Concurrent subnet CIDR range scan | `subnetCidr` (e.g. `192.168.1.0/24`), `strategy` (`PING`/`TCP`/`NMAP`), `threads` |
 | `POST` | `/api/discovery/import` | Mass import discovered devices | JSON Array of `DeviceRequestDto` |
 | `GET` | `/api/discovery/nmap/status` | Check Nmap binary availability & version | — |
 | `POST` | `/api/discovery/nmap` | Run advanced Nmap range scan | Request Body (`DiscoveryRequestDto`) |
 
-### Monitoring Scheduler (`/api/scheduler`)
+### Background Scheduler (`/api/scheduler`)
 | Method | Endpoint | Description |
 |---|---|---|
 | `GET` | `/api/scheduler/status` | Fetch background worker status, active pool size, and scan metrics |
 | `POST` | `/api/scheduler/start` | Enable automatic background monitoring cycle |
 | `POST` | `/api/scheduler/stop` | Pause automatic background monitoring cycle |
 
-### Health Alerts (`/api/alerts`)
+### Alert Management (`/api/alerts`)
 | Method | Endpoint | Description | Query Parameters |
 |---|---|---|---|
 | `GET` | `/api/alerts` | List active unresolved alerts | `includeResolved` (boolean) |
@@ -118,31 +133,37 @@ PHASE 16 → Docker & Docker Compose Deployment
 - **Nmap** binary installed (`/usr/bin/nmap`).
 - **Apache Maven 3.9+**.
 
-### Database Setup
-Ensure PostgreSQL is active and accessible:
-```bash
-psql -U kishore -d myapp -c "SELECT 1;"
-```
+### Build & Run Locally
 
-### Build & Run
-
-#### 1. Compile & Execute Test Suite (53/53 Tests)
+#### 1. Compile & Execute Complete Test Suite (58/58 Tests)
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn clean package
 ```
 
-#### 2. Launch the Spring Boot Server
+#### 2. Launch the Spring Boot Platform
 ```bash
 JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn spring-boot:run
 ```
 
-The application will start on `http://localhost:8080`.
+Open your web browser and navigate to **`http://localhost:8080`** to access the interactive Web Dashboard!
 
 ---
 
-## 🧪 Verification & Test Suite
+## 🐳 Docker Deployment
 
-The project includes 53 unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
+To launch the full stack (Spring Boot Application + PostgreSQL 16) using Docker Compose:
+
+```bash
+docker-compose up --build -d
+```
+
+Access the dashboard at `http://localhost:8080`.
+
+---
+
+## 🧪 Automated Verification & Test Suite
+
+The project includes 58 unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
 - `DeviceServiceTest` & `DeviceControllerTest`: Device CRUD, validation, and search specs.
 - `PingServiceTest` & `DeviceMonitoringServiceTest`: ICMP Ping engine, latency parsing, and metric storage.
 - `PortScannerServiceTest` & `MonitoringControllerTest`: TCP socket port scanning and REST APIs.
@@ -151,99 +172,6 @@ The project includes 53 unit and integration tests using JUnit 5, Mockito, and S
 - `HealthAnalyzerServiceTest` & `AlertServiceTest`: Health status rule analysis, state transition alert deduplication, and recovery auto-resolution.
 - `MonitoringSchedulerServiceTest` & `SchedulerControllerTest`: Bounded background scheduler pool execution & REST endpoints.
 - `AlertControllerTest`: REST API endpoints for viewing and resolving alerts.
+- `SnmpServiceTest`: SNMP hardware metric queries and calculation.
+- `ReportServiceTest` & `ReportControllerTest`: SLA summary calculations and CSV data exporting.
 - `NetworkMonitorApplicationTests`: Context loading and PostgreSQL Hikari connection pool verification.
-
----
-
-## 📂 Project Structure
-
-```text
-src/
-├── main/
-│   ├── java/com/networkmonitor/
-│   │   ├── NetworkMonitorApplication.java
-│   │   ├── config/
-│   │   │   └── MonitoringSchedulerConfig.java
-│   │   ├── controller/
-│   │   │   ├── AlertController.java
-│   │   │   ├── DeviceController.java
-│   │   │   ├── DiscoveryController.java
-│   │   │   ├── HealthCheckController.java
-│   │   │   ├── MonitoringController.java
-│   │   │   └── SchedulerController.java
-│   │   ├── discovery/
-│   │   │   ├── DiscoveryStrategy.java
-│   │   │   ├── NmapDiscoveryStrategy.java
-│   │   │   ├── PingDiscoveryStrategy.java
-│   │   │   ├── SubnetCalculator.java
-│   │   │   └── TcpDiscoveryStrategy.java
-│   │   ├── dto/
-│   │   │   ├── AlertResponseDto.java
-│   │   │   ├── DeviceRequestDto.java
-│   │   │   ├── DeviceResponseDto.java
-│   │   │   ├── DiscoveredDeviceDto.java
-│   │   │   ├── DiscoveryRequestDto.java
-│   │   │   ├── DiscoveryResponseDto.java
-│   │   │   ├── MetricResponseDto.java
-│   │   │   ├── NmapHostResultDto.java
-│   │   │   ├── NmapPortResultDto.java
-│   │   │   ├── NmapScanResultDto.java
-│   │   │   ├── PingCheckResponseDto.java
-│   │   │   ├── PortScanResponseDto.java
-│   │   │   └── PortStatusDto.java
-│   │   ├── entity/
-│   │   │   ├── Alert.java
-│   │   │   ├── AlertSeverity.java
-│   │   │   ├── AlertType.java
-│   │   │   ├── Device.java
-│   │   │   ├── DeviceStatus.java
-│   │   │   ├── DeviceType.java
-│   │   │   ├── HealthStatus.java
-│   │   │   ├── MonitoringMetric.java
-│   │   │   ├── PortState.java
-│   │   │   └── PortStatus.java
-│   │   ├── exception/
-│   │   │   ├── GlobalExceptionHandler.java
-│   │   │   └── ResourceNotFoundException.java
-│   │   ├── monitoring/
-│   │   │   ├── NmapService.java
-│   │   │   ├── PingResult.java
-│   │   │   ├── PingService.java
-│   │   │   └── PortScannerService.java
-│   │   ├── repository/
-│   │   │   ├── AlertRepository.java
-│   │   │   ├── DeviceRepository.java
-│   │   │   ├── MonitoringMetricRepository.java
-│   │   │   └── PortStatusRepository.java
-│   │   └── service/
-│   │       ├── AlertService.java
-│   │       ├── DeviceMonitoringService.java
-│   │       ├── DeviceService.java
-│   │       ├── DiscoveryService.java
-│   │       ├── HealthAnalyzerService.java
-│   │       └── MonitoringSchedulerService.java
-│   └── resources/
-│       └── application.properties
-└── test/
-    └── java/com/networkmonitor/
-        ├── NetworkMonitorApplicationTests.java
-        ├── controller/
-        │   ├── AlertControllerTest.java
-        │   ├── DeviceControllerTest.java
-        │   ├── DiscoveryControllerTest.java
-        │   ├── MonitoringControllerTest.java
-        │   └── SchedulerControllerTest.java
-        ├── discovery/
-        │   └── SubnetCalculatorTest.java
-        ├── monitoring/
-        │   ├── NmapServiceTest.java
-        │   ├── PingServiceTest.java
-        │   └── PortScannerServiceTest.java
-        └── service/
-            ├── AlertServiceTest.java
-            ├── DeviceMonitoringServiceTest.java
-            ├── DeviceServiceTest.java
-            ├── DiscoveryServiceTest.java
-            ├── HealthAnalyzerServiceTest.java
-            └── MonitoringSchedulerServiceTest.java
-```
