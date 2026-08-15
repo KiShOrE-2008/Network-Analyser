@@ -146,17 +146,20 @@ function renderOverviewTab() {
     const openAlerts = state.alerts.filter(a => !a.resolved).slice(0, 5);
 
     if (openAlerts.length === 0) {
-        activeAlertsContainer.innerHTML = `<div style="color: var(--text-muted); text-align: center; padding: 24px;">🎉 All systems operational. No active alerts!</div>`;
+        activeAlertsContainer.innerHTML = `<div class="text-center text-on-surface-variant py-8">🎉 All network segments operational. No critical alerts active!</div>`;
         return;
     }
 
     activeAlertsContainer.innerHTML = openAlerts.map(alert => `
-        <div style="display: flex; justify-content: space-between; align-items: center; padding: 12px 16px; background: rgba(31, 41, 55, 0.4); border-radius: var(--radius-sm); margin-bottom: 8px; border-left: 4px solid ${getSeverityColor(alert.severity)};">
+        <div class="p-4 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center border-l-4" style="border-left-color: ${getSeverityColor(alert.severity)};">
             <div>
-                <div style="font-weight: 600; font-size: 14px;">${escapeHtml(alert.deviceName)} (${escapeHtml(alert.deviceIp)})</div>
-                <div style="color: var(--text-muted); font-size: 12px; margin-top: 2px;">${escapeHtml(alert.message)}</div>
+                <div class="font-semibold text-on-surface text-sm flex items-center gap-2">
+                    <span>${escapeHtml(alert.deviceName)}</span>
+                    <span class="font-mono text-xs text-on-surface-variant">(${escapeHtml(alert.deviceIp)})</span>
+                </div>
+                <div class="text-xs text-on-surface-variant mt-1">${escapeHtml(alert.message)}</div>
             </div>
-            <button class="btn btn-secondary btn-sm" onclick="resolveAlert(${alert.id})">Acknowledge</button>
+            <button class="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase rounded-lg hover:bg-primary hover:text-background transition-colors" onclick="resolveAlert(${alert.id})">Acknowledge</button>
         </div>
     `).join('');
 }
@@ -174,66 +177,72 @@ function renderDevicesTab() {
     });
 
     if (filtered.length === 0) {
-        tableBody.innerHTML = `<tr><td colspan="7" style="text-align: center; color: var(--text-muted); padding: 32px;">No devices found. Click "+ Register Device" to add your first device.</td></tr>`;
+        tableBody.innerHTML = `<tr><td colspan="7" class="text-center text-on-surface-variant py-12">No devices found. Click "+ Register Device" to add your first device.</td></tr>`;
         return;
     }
 
     tableBody.innerHTML = filtered.map(d => `
-        <tr>
-            <td>
-                <div style="font-weight: 600;">${escapeHtml(d.name)}</div>
-                <div style="color: var(--text-muted); font-size: 12px;">${escapeHtml(d.vendor || '')} ${escapeHtml(d.model || '')}</div>
+        <tr class="hover:bg-white/5 transition-colors">
+            <td class="py-4 px-6">
+                <div class="font-medium text-on-surface font-sans">${escapeHtml(d.name)}</div>
+                <div class="text-xs text-on-surface-variant font-sans">${escapeHtml(d.vendor || '')} ${escapeHtml(d.model || '')}</div>
             </td>
-            <td><code style="background: rgba(255,255,255,0.06); padding: 2px 6px; border-radius: 4px;">${escapeHtml(d.ipAddress)}</code></td>
-            <td><span class="badge" style="background: rgba(59,130,246,0.15); color: var(--primary);">${escapeHtml(d.deviceType)}</span></td>
-            <td>
-                <span class="badge ${d.status === 'ONLINE' ? 'badge-online' : 'badge-offline'}">
-                    <span class="status-dot"></span> ${d.status}
+            <td class="py-4 px-6 text-on-surface-variant font-mono"><code>${escapeHtml(d.ipAddress)}</code></td>
+            <td class="py-4 px-6 font-sans"><span class="px-2 py-0.5 rounded text-xs font-bold uppercase bg-primary/10 text-primary border border-primary/20">${escapeHtml(d.deviceType)}</span></td>
+            <td class="py-4 px-6 font-sans">
+                <span class="inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-bold ${d.status === 'ONLINE' ? 'bg-secondary/10 text-secondary border border-secondary/20' : 'bg-error/10 text-error border border-error/20'}">
+                    <span class="w-1.5 h-1.5 rounded-full ${d.status === 'ONLINE' ? 'bg-secondary pulse-emerald' : 'bg-error pulse-rose'}"></span> ${d.status}
                 </span>
             </td>
-            <td>
-                <span class="badge badge-${(d.healthStatus || 'HEALTHY').toLowerCase()}">
+            <td class="py-4 px-6 font-sans">
+                <span class="px-2 py-0.5 rounded text-xs font-bold ${getHealthBadgeClass(d.healthStatus)}">
                     ${d.healthStatus || 'HEALTHY'}
                 </span>
             </td>
-            <td>
-                <label class="switch">
-                    <input type="checkbox" ${d.monitoringEnabled ? 'checked' : ''} onchange="toggleDeviceMonitoring(${d.id})">
-                    <span class="slider"></span>
+            <td class="py-4 px-6 font-sans">
+                <label class="relative inline-flex items-center cursor-pointer">
+                    <input type="checkbox" ${d.monitoringEnabled ? 'checked' : ''} onchange="toggleDeviceMonitoring(${d.id})" class="sr-only peer">
+                    <div class="w-9 h-5 bg-white/10 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-secondary"></div>
                 </label>
             </td>
-            <td>
-                <div style="display: flex; gap: 6px;">
-                    <button class="btn btn-secondary btn-sm" onclick="openDeviceDetail(${d.id})" title="Inspect Device">📊 Inspect</button>
-                    <button class="btn btn-primary btn-sm" onclick="triggerPingCheck(${d.id})" title="Ping Check">⚡ Ping</button>
-                    <button class="btn btn-secondary btn-sm" onclick="deleteDevice(${d.id})" title="Delete Device">🗑️</button>
+            <td class="py-4 px-6 text-right font-sans">
+                <div class="flex items-center justify-end gap-2">
+                    <button class="px-2.5 py-1 glass-panel text-xs text-on-surface hover:text-primary rounded-lg" onclick="openDeviceDetail(${d.id})" title="Inspect Device">📊 Inspect</button>
+                    <button class="px-2.5 py-1 bg-primary/10 text-primary border border-primary/20 text-xs rounded-lg hover:bg-primary hover:text-background transition-colors" onclick="triggerPingCheck(${d.id})" title="Ping Check">⚡ Ping</button>
+                    <button class="px-2 py-1 text-on-surface-variant hover:text-error transition-colors" onclick="deleteDevice(${d.id})" title="Delete Device">🗑️</button>
                 </div>
             </td>
         </tr>
     `).join('');
 }
 
+function getHealthBadgeClass(status) {
+    if (status === 'CRITICAL') return 'bg-error/10 text-error border border-error/20';
+    if (status === 'WARNING') return 'bg-tertiary/10 text-tertiary border border-tertiary/20';
+    return 'bg-secondary/10 text-secondary border border-secondary/20';
+}
+
 function renderAlertsTab() {
     const alertsContainer = document.getElementById('alerts-list-container');
     if (state.alerts.length === 0) {
-        alertsContainer.innerHTML = `<div style="text-align: center; color: var(--text-muted); padding: 32px;">No alerts recorded in system history.</div>`;
+        alertsContainer.innerHTML = `<div class="text-center text-on-surface-variant py-12">No alerts recorded in system history.</div>`;
         return;
     }
 
     alertsContainer.innerHTML = state.alerts.map(a => `
-        <div style="padding: 16px; background: rgba(31, 41, 55, 0.4); border-radius: var(--radius-md); margin-bottom: 12px; border-left: 4px solid ${getSeverityColor(a.severity)}; display: flex; justify-content: space-between; align-items: center;">
+        <div class="p-4 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center border-l-4" style="border-left-color: ${getSeverityColor(a.severity)};">
             <div>
-                <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 4px;">
-                    <span class="badge" style="background: ${getSeverityColor(a.severity)}22; color: ${getSeverityColor(a.severity)};">${a.severity}</span>
-                    <span style="font-weight: 700;">${escapeHtml(a.deviceName)} (${escapeHtml(a.deviceIp)})</span>
-                    <span style="color: var(--text-subtle); font-size: 12px;">• ${new Date(a.createdAt).toLocaleString()}</span>
+                <div class="flex items-center gap-3 mb-1">
+                    <span class="px-2 py-0.5 rounded text-xs font-bold uppercase" style="background: ${getSeverityColor(a.severity)}22; color: ${getSeverityColor(a.severity)}; border: 1px solid ${getSeverityColor(a.severity)}44;">${a.severity}</span>
+                    <span class="font-bold text-on-surface text-sm">${escapeHtml(a.deviceName)} (${escapeHtml(a.deviceIp)})</span>
+                    <span class="text-xs text-on-surface-variant">• ${new Date(a.createdAt).toLocaleString()}</span>
                 </div>
-                <div style="color: var(--text-main); font-size: 14px;">${escapeHtml(a.message)}</div>
+                <div class="text-xs text-on-surface mt-1">${escapeHtml(a.message)}</div>
             </div>
             <div>
                 ${a.resolved 
-                    ? `<span class="badge badge-online">✓ Resolved ${a.resolvedAt ? new Date(a.resolvedAt).toLocaleTimeString() : ''}</span>`
-                    : `<button class="btn btn-primary btn-sm" onclick="resolveAlert(${a.id})">Acknowledge</button>`
+                    ? `<span class="px-3 py-1 rounded-full text-xs font-semibold bg-secondary/10 text-secondary border border-secondary/20">✓ Resolved ${a.resolvedAt ? new Date(a.resolvedAt).toLocaleTimeString() : ''}</span>`
+                    : `<button class="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase rounded-lg hover:bg-primary hover:text-background transition-colors" onclick="resolveAlert(${a.id})">Acknowledge</button>`
                 }
             </div>
         </div>
@@ -653,11 +662,44 @@ function initWebSockets() {
     }
 }
 
+async function triggerSnmpCheck(deviceId) {
+    try {
+        showToast('Querying SNMP hardware metrics...');
+        const res = await fetch(`${API_BASE}/devices/${deviceId}/snmp-check`, { method: 'POST' });
+        if (res.ok) {
+            const result = await res.json();
+            renderSnmpResult(result);
+            showToast(`SNMP query completed: CPU ${result.cpuUsagePercent}%, Memory ${result.memoryUsagePercent}%.`);
+        }
+    } catch (err) {
+        showToast('SNMP query failed', true);
+    }
+}
+
+function renderSnmpResult(result) {
+    const container = document.getElementById('nmap-result-container');
+    if (!result) return;
+
+    container.innerHTML = `
+        <div class="bg-primary/10 border border-primary/20 p-3 rounded-lg text-xs space-y-1">
+            <div class="font-bold text-primary">SNMP Hardware Query Result (Community: ${escapeHtml(result.community)})</div>
+            <div>System Uptime: <strong>${Math.floor(result.sysUptimeSeconds / 86400)} days, ${Math.floor((result.sysUptimeSeconds % 86400) / 3600)} hours</strong></div>
+            <div>CPU Load: <strong class="text-secondary">${result.cpuUsagePercent}%</strong></div>
+            <div>Memory Usage: <strong class="text-tertiary">${result.memoryUsagePercent}%</strong></div>
+            <div>Network Interfaces: <strong>${result.networkInterfacesCount} active interfaces</strong></div>
+        </div>
+    `;
+}
+
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
+
 function updateWsBadge(connected) {
     const badge = document.getElementById('ws-connection-badge');
     if (badge) {
-        badge.className = `ws-badge ${connected ? '' : 'disconnected'}`;
-        badge.innerHTML = `<span class="status-dot"></span> ${connected ? 'LIVE WS CONNECTED' : 'REST POLLING ACTIVE'}`;
+        badge.className = `flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold ${connected ? 'bg-emerald-500/10 text-secondary border border-secondary/20' : 'bg-rose-500/10 text-error border border-error/20'}`;
+        badge.innerHTML = `<span class="w-2 h-2 rounded-full ${connected ? 'bg-secondary pulse-emerald' : 'bg-error pulse-rose'}"></span> ${connected ? 'LIVE WS CONNECTED' : 'REST POLLING ACTIVE'}`;
     }
 }
 
