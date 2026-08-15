@@ -158,7 +158,7 @@ async function renderOverviewTab() {
         activeAlertsContainer.innerHTML = `<div class="text-center text-on-surface-variant py-8">🎉 All network segments operational. No critical alerts active!</div>`;
     } else {
         activeAlertsContainer.innerHTML = openAlerts.map(alert => `
-            <div class="p-4 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center border-l-4" style="border-left-color: ${getSeverityColor(alert.severity)};">
+            <div class="glass-panel p-4 rounded-xl flex justify-between items-center border-l-4" style="border-left-color: ${getSeverityColor(alert.severity)};">
                 <div>
                     <div class="font-semibold text-on-surface text-sm flex items-center gap-2">
                         <span>${escapeHtml(alert.deviceName)}</span>
