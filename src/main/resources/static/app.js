@@ -47,11 +47,20 @@ function setupNavigation() {
 function switchTab(tabId) {
     state.activeTab = tabId;
     document.querySelectorAll('.nav-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.tab === tabId);
+        const isActive = btn.dataset.tab === tabId;
+        btn.classList.toggle('active', isActive);
+        if (isActive) {
+            btn.className = "nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-primary bg-primary/10 border-r-4 border-primary transition-all text-xs font-bold uppercase tracking-wider";
+        } else {
+            btn.className = "nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-wider";
+        }
     });
     document.querySelectorAll('.tab-content').forEach(content => {
-        content.style.display = content.id === `tab-${tabId}` ? 'block' : 'none';
+        const isTarget = content.id === `tab-${tabId}`;
+        content.classList.toggle('hidden', !isTarget);
+        content.style.display = isTarget ? 'block' : 'none';
     });
+    renderActiveTab();
 }
 
 // Data Fetchers & API Calls
@@ -119,7 +128,7 @@ function renderKpis() {
     document.getElementById('kpi-total-devices').innerText = totalDevices;
     document.getElementById('kpi-online-devices').innerText = `${onlineDevices} / ${totalDevices}`;
     document.getElementById('kpi-active-alerts').innerText = activeAlerts;
-    document.getElementById('kpi-scheduler-status').innerText = state.scheduler.active ? 'ACTIVE (10 Threads)' : 'PAUSED';
+    document.getElementById('kpi-scheduler-status').innerText = state.scheduler.active ? 'ACTIVE' : 'PAUSED';
 
     const schedulerBadge = document.getElementById('scheduler-badge-dot');
     if (schedulerBadge) {
@@ -141,27 +150,39 @@ function renderActiveTab() {
     }
 }
 
-function renderOverviewTab() {
+async function renderOverviewTab() {
     const activeAlertsContainer = document.getElementById('overview-active-alerts');
     const openAlerts = state.alerts.filter(a => !a.resolved).slice(0, 5);
 
     if (openAlerts.length === 0) {
         activeAlertsContainer.innerHTML = `<div class="text-center text-on-surface-variant py-8">🎉 All network segments operational. No critical alerts active!</div>`;
-        return;
+    } else {
+        activeAlertsContainer.innerHTML = openAlerts.map(alert => `
+            <div class="p-4 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center border-l-4" style="border-left-color: ${getSeverityColor(alert.severity)};">
+                <div>
+                    <div class="font-semibold text-on-surface text-sm flex items-center gap-2">
+                        <span>${escapeHtml(alert.deviceName)}</span>
+                        <span class="font-mono text-xs text-on-surface-variant">(${escapeHtml(alert.deviceIp)})</span>
+                    </div>
+                    <div class="text-xs text-on-surface-variant mt-1">${escapeHtml(alert.message)}</div>
+                </div>
+                <button class="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase rounded-lg hover:bg-primary hover:text-background transition-colors" onclick="resolveAlert(${alert.id})">Acknowledge</button>
+            </div>
+        `).join('');
     }
 
-    activeAlertsContainer.innerHTML = openAlerts.map(alert => `
-        <div class="p-4 bg-white/5 border border-white/5 rounded-xl flex justify-between items-center border-l-4" style="border-left-color: ${getSeverityColor(alert.severity)};">
-            <div>
-                <div class="font-semibold text-on-surface text-sm flex items-center gap-2">
-                    <span>${escapeHtml(alert.deviceName)}</span>
-                    <span class="font-mono text-xs text-on-surface-variant">(${escapeHtml(alert.deviceIp)})</span>
-                </div>
-                <div class="text-xs text-on-surface-variant mt-1">${escapeHtml(alert.message)}</div>
-            </div>
-            <button class="px-3 py-1.5 bg-primary/10 text-primary border border-primary/20 text-xs font-bold uppercase rounded-lg hover:bg-primary hover:text-background transition-colors" onclick="resolveAlert(${alert.id})">Acknowledge</button>
-        </div>
-    `).join('');
+    try {
+        const res = await fetch(`${API_BASE}/reports/summary`);
+        if (res.ok) {
+            const report = await res.json();
+            const slaEl = document.getElementById('overview-sla-percent');
+            const latEl = document.getElementById('overview-avg-latency');
+            if (slaEl) slaEl.innerText = `${report.slaAvailabilityPercent}%`;
+            if (latEl) latEl.innerText = `${report.averageSystemLatencyMs} ms`;
+        }
+    } catch (err) {
+        console.error('Fetch report summary failed:', err);
+    }
 }
 
 function renderDevicesTab() {
