@@ -6,14 +6,18 @@ import java.io.BufferedReader;
 import java.io.InputStreamReader;
 import java.net.InetAddress;
 import java.time.LocalDateTime;
+import java.util.concurrent.TimeUnit;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 @Service
 public class PingService {
 
-    private static final Pattern PACKET_LOSS_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?)%\\s+packet\\s+loss");
-    private static final Pattern RTT_AVG_PATTERN = Pattern.compile("rtt\\s+min/avg/max/mdev\\s*=\\s*\\d+(?:\\.\\d+)?/(\\d+(?:\\.\\d+)?)/");
+    private static final Pattern LINUX_PACKET_LOSS_PATTERN = Pattern.compile("(\\d+(?:\\.\\d+)?)%\\s+packet\\s+loss");
+    private static final Pattern LINUX_RTT_AVG_PATTERN = Pattern.compile("rtt\\s+min/avg/max/mdev\\s*=\\s*\\d+(?:\\.\\d+)?/(\\d+(?:\\.\\d+)?)/");
+
+    private static final Pattern WIN_PACKET_LOSS_PATTERN = Pattern.compile("\\((\\d+(?:\\.\\d+)?)%\\s+loss\\)");
+    private static final Pattern WIN_RTT_AVG_PATTERN = Pattern.compile("Average\\s*=\\s*(\\d+)ms");
 
     public PingResult ping(String ipAddress) {
         return ping(ipAddress, 3, 2);
@@ -24,8 +28,18 @@ public class PingService {
         result.setIpAddress(ipAddress);
         result.setTimestamp(LocalDateTime.now());
 
+        boolean isWindows = System.getProperty("os.name").toLowerCase().contains("win");
+
         try {
-            ProcessBuilder pb = new ProcessBuilder("ping", "-c", String.valueOf(packets), "-W", String.valueOf(timeoutSeconds), ipAddress);
+            ProcessBuilder pb;
+            if (isWindows) {
+                // Windows ping uses -n for count, -w for timeout in milliseconds
+                pb = new ProcessBuilder("ping", "-n", String.valueOf(packets), "-w", String.valueOf(timeoutSeconds * 1000), ipAddress);
+            } else {
+                // Linux/macOS ping uses -c for count, -W for timeout in seconds
+                pb = new ProcessBuilder("ping", "-c", String.valueOf(packets), "-W", String.valueOf(timeoutSeconds), ipAddress);
+            }
+
             Process process = pb.start();
 
             BufferedReader reader = new BufferedReader(new InputStreamReader(process.getInputStream()));
@@ -35,20 +49,37 @@ public class PingService {
                 output.append(line).append("\n");
             }
 
-            int exitCode = process.waitFor();
-            String response = output.toString();
-
-            Matcher lossMatcher = PACKET_LOSS_PATTERN.matcher(response);
-            Matcher rttMatcher = RTT_AVG_PATTERN.matcher(response);
-
-            Double packetLoss = null;
-            if (lossMatcher.find()) {
-                packetLoss = Double.parseDouble(lossMatcher.group(1));
+            // Java-side process timeout guard to prevent hangs
+            boolean completed = process.waitFor(timeoutSeconds + 3, TimeUnit.SECONDS);
+            if (!completed) {
+                process.destroyForcibly();
+                return fallbackJavaPing(ipAddress, timeoutSeconds * 1000);
             }
 
+            int exitCode = process.exitValue();
+            String response = output.toString();
+
+            Double packetLoss = null;
             Double avgLatency = null;
-            if (rttMatcher.find()) {
-                avgLatency = Double.parseDouble(rttMatcher.group(1));
+
+            if (isWindows) {
+                Matcher lossMatcher = WIN_PACKET_LOSS_PATTERN.matcher(response);
+                if (lossMatcher.find()) {
+                    packetLoss = Double.parseDouble(lossMatcher.group(1));
+                }
+                Matcher rttMatcher = WIN_RTT_AVG_PATTERN.matcher(response);
+                if (rttMatcher.find()) {
+                    avgLatency = Double.parseDouble(rttMatcher.group(1));
+                }
+            } else {
+                Matcher lossMatcher = LINUX_PACKET_LOSS_PATTERN.matcher(response);
+                if (lossMatcher.find()) {
+                    packetLoss = Double.parseDouble(lossMatcher.group(1));
+                }
+                Matcher rttMatcher = LINUX_RTT_AVG_PATTERN.matcher(response);
+                if (rttMatcher.find()) {
+                    avgLatency = Double.parseDouble(rttMatcher.group(1));
+                }
             }
 
             boolean isReachable = (exitCode == 0) || (packetLoss != null && packetLoss < 100.0);
@@ -58,7 +89,6 @@ public class PingService {
                 result.setPacketLossPercent(packetLoss != null ? packetLoss : 0.0);
                 result.setLatencyMs(avgLatency != null ? avgLatency : 1.0);
             } else {
-                // Fallback to InetAddress.isReachable if process return code failed or was unparsed
                 return fallbackJavaPing(ipAddress, timeoutSeconds * 1000);
             }
         } catch (Exception ex) {

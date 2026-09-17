@@ -12,7 +12,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -82,10 +81,13 @@ public class NmapService {
     public void parseNmapXml(InputStream xmlInputStream, NmapScanResultDto resultDto) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            // Disable DTD validation for security
+            // Disable external DTD resolution and entities for XXE security while supporting Nmap DOCTYPE header
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
+            factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
+            factory.setXIncludeAware(false);
+            factory.setExpandEntityReferences(false);
 
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(xmlInputStream);

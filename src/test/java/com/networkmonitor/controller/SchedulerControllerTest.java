@@ -40,7 +40,7 @@ class SchedulerControllerTest {
     @Test
     @DisplayName("POST /api/scheduler/stop should return 200 OK and updated status")
     void stopScheduler_ShouldReturnStatus() throws Exception {
-        when(schedulerService.stopScheduler()).thenReturn(false);
+        when(schedulerService.stopScheduler()).thenReturn(true);
         when(schedulerService.isSchedulerActive()).thenReturn(false);
 
         mockMvc.perform(post("/api/scheduler/stop"))

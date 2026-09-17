@@ -3,6 +3,7 @@
 
 # Log files
 *.log
+alerts.log
 
 # Package Files
 *.jar
@@ -16,13 +17,29 @@
 # Virtual machine crash logs
 hs_err_pid*
 
-# IntelliJ IDEA config and outputs
+# Maven & Build outputs
+target/
+out/
+build/
+.mvn/
+
+# IDE files
 .idea/
 *.iml
-out/
+.vscode/
+.classpath
+.project
+.settings/
+*.factorypath
+
+# Environment & Secret files
+.env
+*.env
+.env.local
+
+# OS Generated Files
+.DS_Store
+Thumbs.db
+
+# Temporary runtime data
 devices.txt
-
-# Maven build outputs
-target/
-
-
