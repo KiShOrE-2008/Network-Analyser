@@ -2,146 +2,85 @@ package com.networkmonitor.service;
 
 import com.networkmonitor.discovery.DiscoveryStrategy;
 import com.networkmonitor.discovery.SubnetCalculator;
-import com.networkmonitor.dto.DiscoveredDeviceDto;
-import com.networkmonitor.dto.DiscoveryRequestDto;
-import com.networkmonitor.dto.DiscoveryResponseDto;
-import com.networkmonitor.dto.DeviceRequestDto;
-import com.networkmonitor.dto.DeviceResponseDto;
+import com.networkmonitor.dto.*;
 import com.networkmonitor.entity.DeviceType;
+import com.networkmonitor.monitoring.PingResult;
+import com.networkmonitor.monitoring.PingService;
 import com.networkmonitor.repository.DeviceRepository;
 import org.springframework.stereotype.Service;
-
 import java.net.InetAddress;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.TimeUnit;
+import java.util.*;
+import java.util.concurrent.*;
 
 @Service
 public class DiscoveryService {
-
     private final Map<String, DiscoveryStrategy> strategyMap;
     private final DeviceRepository deviceRepository;
     private final DeviceService deviceService;
+    private final PingService pingService;
+    private final NetworkIdentityService identityService;
 
-    public DiscoveryService(Map<String, DiscoveryStrategy> strategyMap, DeviceRepository deviceRepository, DeviceService deviceService) {
-        this.strategyMap = strategyMap;
-        this.deviceRepository = deviceRepository;
-        this.deviceService = deviceService;
+    public DiscoveryService(Map<String, DiscoveryStrategy> strategyMap, DeviceRepository deviceRepository,
+                            DeviceService deviceService, PingService pingService, NetworkIdentityService identityService) {
+        this.strategyMap=strategyMap; this.deviceRepository=deviceRepository; this.deviceService=deviceService;
+        this.pingService=pingService; this.identityService=identityService;
     }
 
     public DiscoveryResponseDto scanSubnet(DiscoveryRequestDto request) {
-        long startTime = System.currentTimeMillis();
-
-        List<String> targetIps = SubnetCalculator.getIpAddressesInCidr(request.getSubnetCidr());
-
-        String strategyKey = request.getStrategy() != null && request.getStrategy().equalsIgnoreCase("TCP")
-                ? "TCP_DISCOVERY" : "PING_DISCOVERY";
-
-        DiscoveryStrategy selectedStrategy = strategyMap.get(strategyKey);
-        final DiscoveryStrategy activeStrategy = (selectedStrategy != null)
-                ? selectedStrategy
-                : strategyMap.get("PING_DISCOVERY");
-
-        int threadCount = request.getThreads() != null ? Math.min(Math.max(request.getThreads(), 1), 50) : 20;
-        int timeoutMs = request.getTimeoutMs() != null ? request.getTimeoutMs() : 800;
-
-        ExecutorService executor = Executors.newFixedThreadPool(threadCount);
-        List<DiscoveredDeviceDto> discoveredDevices = Collections.synchronizedList(new ArrayList<>());
-
-        for (String ip : targetIps) {
-            executor.submit(() -> {
-                boolean reachable = activeStrategy != null && activeStrategy.checkReachability(ip, timeoutMs);
-                if (reachable) {
-                    boolean alreadyMonitored = deviceRepository.existsByIpAddress(ip);
-                    String hostname = resolveHostname(ip);
-                    String suggestedName = (hostname != null && !hostname.equals(ip)) ? hostname : "Discovered Host " + ip;
-                    DeviceType suggestedType = guessDeviceType(ip, hostname);
-
-                    discoveredDevices.add(new DiscoveredDeviceDto(
-                            ip,
-                            hostname,
-                            true,
-                            suggestedName,
-                            suggestedType,
-                            alreadyMonitored
-                    ));
-                }
-            });
-        }
-
+        long start=System.currentTimeMillis();
+        List<String> targets=SubnetCalculator.getIpAddressesInCidr(request.getSubnetCidr());
+        String key="TCP".equalsIgnoreCase(request.getStrategy()) ? "TCP_DISCOVERY" : "PING_DISCOVERY";
+        DiscoveryStrategy selected=strategyMap.get(key); if(selected==null) selected=strategyMap.get("PING_DISCOVERY");
+        final DiscoveryStrategy active=selected;
+        int threads=Math.min(Math.max(request.getThreads()!=null?request.getThreads():20,1),50);
+        int timeout=request.getTimeoutMs()!=null?Math.min(Math.max(request.getTimeoutMs(),100),10000):800;
+        ExecutorService executor=Executors.newFixedThreadPool(threads);
+        List<DiscoveredDeviceDto> found=Collections.synchronizedList(new ArrayList<>());
+        for(String ip:targets) executor.submit(()->{
+            PingResult ping=null;
+            boolean reachable;
+            if("PING".equalsIgnoreCase(request.getStrategy()) || request.getStrategy()==null) {
+                ping=pingService.ping(ip,1,Math.max(1,(timeout+999)/1000)); reachable=ping.isReachable();
+            } else reachable=active!=null && active.checkReachability(ip,timeout);
+            if(!reachable) return;
+            String hostname=resolveHostname(ip);
+            String suggested=(hostname!=null&&!hostname.equals(ip))?hostname:"Discovered Host "+ip;
+            DeviceType type=guessDeviceType(ip,hostname);
+            NetworkIdentityService.Identity identity=identityService.lookup(ip);
+            DiscoveredDeviceDto d=new DiscoveredDeviceDto(ip,hostname,true,suggested,type,deviceRepository.existsByIpAddress(ip));
+            if(ping!=null){d.setLatencyMs(ping.getLatencyMs()); d.setPacketLossPercent(ping.getPacketLossPercent());}
+            d.setMacAddress(identity.getMacAddress()); d.setVendor(identity.getVendor());
+            d.setOsClue(guessOsClue(hostname));
+            found.add(d);
+        });
         executor.shutdown();
-        try {
-            executor.awaitTermination(5, TimeUnit.MINUTES);
-        } catch (InterruptedException e) {
-            Thread.currentThread().interrupt();
-        }
-
-        long endTime = System.currentTimeMillis();
-
-        int existingCount = 0;
-        int newCount = 0;
-        for (DiscoveredDeviceDto d : discoveredDevices) {
-            if (d.isAlreadyMonitored()) {
-                existingCount++;
-            } else {
-                newCount++;
-            }
-        }
-
-        DiscoveryResponseDto response = new DiscoveryResponseDto();
-        response.setSubnetCidr(request.getSubnetCidr());
-        response.setTotalScanned(targetIps.size());
-        response.setDevicesDiscoveredCount(discoveredDevices.size());
-        response.setNewDevicesCount(newCount);
-        response.setExistingDevicesCount(existingCount);
-        response.setScanDurationMs(endTime - startTime);
-        response.setDiscoveredDevices(discoveredDevices);
-
-        return response;
+        try{executor.awaitTermination(5,TimeUnit.MINUTES);}catch(InterruptedException e){Thread.currentThread().interrupt();}
+        int existing=0; for(DiscoveredDeviceDto d:found) if(d.isAlreadyMonitored()) existing++;
+        DiscoveryResponseDto r=new DiscoveryResponseDto(); r.setSubnetCidr(request.getSubnetCidr()); r.setTotalScanned(targets.size());
+        r.setDevicesDiscoveredCount(found.size()); r.setExistingDevicesCount(existing); r.setNewDevicesCount(found.size()-existing);
+        r.setScanDurationMs(System.currentTimeMillis()-start); r.setDiscoveredDevices(found); return r;
     }
 
-    public List<DeviceResponseDto> importDiscoveredDevices(List<DeviceRequestDto> devicesToImport) {
-        List<DeviceResponseDto> imported = new ArrayList<>();
-        for (DeviceRequestDto dto : devicesToImport) {
-            if (!deviceRepository.existsByIpAddress(dto.getIpAddress())) {
-                imported.add(deviceService.createDevice(dto));
-            }
-        }
-        return imported;
+    public List<DeviceResponseDto> importDiscoveredDevices(List<DeviceRequestDto> devices){
+        List<DeviceResponseDto> result=new ArrayList<>(); for(DeviceRequestDto d:devices) if(!deviceRepository.existsByIpAddress(d.getIpAddress())) result.add(deviceService.createDevice(d)); return result;
     }
 
-    private String resolveHostname(String ip) {
-        try {
-            InetAddress addr = InetAddress.getByName(ip);
-            return addr.getHostName();
-        } catch (Exception e) {
-            return ip;
-        }
+    public DeviceResponseDto upsertDiscoveredDevice(DiscoveredDeviceDto d){
+        return deviceService.upsertDiscoveredDevice(d);
     }
 
-    private DeviceType guessDeviceType(String ip, String hostname) {
-        if (ip.endsWith(".1") || ip.endsWith(".254")) {
-            return DeviceType.ROUTER;
-        }
-        if (hostname != null) {
-            String lowerHost = hostname.toLowerCase();
-            if (lowerHost.contains("router") || lowerHost.contains("gw") || lowerHost.contains("gateway")) {
-                return DeviceType.ROUTER;
-            }
-            if (lowerHost.contains("switch") || lowerHost.contains("sw")) {
-                return DeviceType.SWITCH;
-            }
-            if (lowerHost.contains("server") || lowerHost.contains("srv") || lowerHost.contains("host")) {
-                return DeviceType.SERVER;
-            }
-            if (lowerHost.contains("printer") || lowerHost.contains("ptr")) {
-                return DeviceType.PRINTER;
-            }
-        }
+    private String resolveHostname(String ip){try{return InetAddress.getByName(ip).getHostName();}catch(Exception e){return ip;}}
+    private DeviceType guessDeviceType(String ip,String hostname){
+        if(ip.endsWith(".1")||ip.endsWith(".254")) return DeviceType.ROUTER;
+        if(hostname!=null){String h=hostname.toLowerCase(Locale.ROOT); if(h.contains("router")||h.contains("gateway")||h.contains("gw"))return DeviceType.ROUTER;
+            if(h.contains("switch")||h.matches(".*\\bsw[-_].*"))return DeviceType.SWITCH; if(h.contains("printer")||h.contains("print"))return DeviceType.PRINTER;
+            if(h.contains("server")||h.contains("srv"))return DeviceType.SERVER;}
         return DeviceType.WORKSTATION;
+    }
+    private String guessOsClue(String hostname){
+        if(hostname==null)return null; String h=hostname.toLowerCase(Locale.ROOT);
+        if(h.contains("android"))return "Android (hostname clue)"; if(h.contains("iphone")||h.contains("ipad")||h.contains("macbook"))return "Apple OS (hostname clue)";
+        if(h.contains("windows")||h.contains("win-"))return "Windows (hostname clue)"; if(h.contains("linux")||h.contains("ubuntu")||h.contains("rasp"))return "Linux (hostname clue)";
+        return null;
     }
 }
