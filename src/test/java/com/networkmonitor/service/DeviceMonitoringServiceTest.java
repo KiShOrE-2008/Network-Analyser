@@ -55,6 +55,9 @@ class DeviceMonitoringServiceTest {
     private AlertService alertService;
 
     @Mock
+    private com.networkmonitor.repository.DeviceEventRepository deviceEventRepository;
+
+    @Mock
     private WebSocketNotificationService notificationService;
 
     @InjectMocks

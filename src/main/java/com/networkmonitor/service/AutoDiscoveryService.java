@@ -8,7 +8,6 @@ import com.networkmonitor.dto.DiscoveryResponseDto;
 import com.networkmonitor.dto.LocalNetworkDto;
 import com.networkmonitor.dto.NmapHostResultDto;
 import com.networkmonitor.dto.NmapScanResultDto;
-import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.monitoring.NmapService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

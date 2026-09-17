@@ -1,26 +1,377 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>NetScope — Network Discovery & Monitoring</title>
-<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
-<style>
-:root{--bg:#080a0f;--panel:#0e1219;--panel2:#121720;--line:#202936;--text:#edf2f7;--muted:#8793a5;--accent:#68e1a1;--blue:#75a7ff;--warn:#f4c86b;--danger:#ff7180;--cyan:#64d9ef;--radius:12px}*{box-sizing:border-box}body{margin:0;background:radial-gradient(circle at 80% -10%,#142033 0,transparent 34%),var(--bg);color:var(--text);font:14px Inter,system-ui,sans-serif}button,input,select{font:inherit}button{cursor:pointer}.app{display:grid;grid-template-columns:230px 1fr;min-height:100vh}.sidebar{border-right:1px solid var(--line);background:#0a0d12;padding:18px 12px;display:flex;flex-direction:column}.brand{display:flex;gap:10px;align-items:center;padding:6px 10px 22px}.brandmark{width:34px;height:34px;border:1px solid #35506a;border-radius:9px;display:grid;place-items:center;color:var(--cyan);font-weight:700}.brand strong{font-size:15px}.brand span{display:block;color:var(--muted);font-size:10px;margin-top:2px}.nav{display:grid;gap:4px}.nav button{border:0;background:transparent;color:#aab5c5;text-align:left;padding:11px 12px;border-radius:8px;display:flex;gap:10px;align-items:center}.nav button:hover,.nav button.active{background:#141b25;color:#fff}.nav button.active{box-shadow:inset 2px 0 var(--accent)}.side-bottom{margin-top:auto;border-top:1px solid var(--line);padding:14px 10px;color:var(--muted);font-size:11px}.dot{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--accent);margin-right:7px}.main{min-width:0}.top{height:64px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;padding:0 24px;background:#0a0d12cc;backdrop-filter:blur(10px)}.top h1{font-size:16px;margin:0}.top p{margin:3px 0 0;color:var(--muted);font-size:11px}.top-actions{display:flex;gap:8px;align-items:center}.status{padding:7px 10px;border:1px solid #254b3a;border-radius:999px;color:var(--accent);background:#0c1b14;font-size:11px}.btn{border:1px solid var(--line);background:#111721;color:#dce4ee;padding:9px 13px;border-radius:8px}.btn:hover{border-color:#3c4b5e;background:#161d28}.btn.primary{background:var(--accent);color:#07100b;border-color:var(--accent);font-weight:700}.content{padding:22px;max-width:1600px;margin:auto}.view{display:none}.view.active{display:block}.hero{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:18px}.hero h2{font-size:25px;margin:0 0 5px;letter-spacing:-.5px}.hero p{margin:0;color:var(--muted)}.actions{display:flex;gap:8px}.kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:10px;margin-bottom:14px}.kpi{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:15px}.kpi label{color:var(--muted);font-size:10px;text-transform:uppercase;letter-spacing:.8px}.kpi b{display:block;font-size:25px;margin-top:8px}.kpi small{color:var(--muted)}.grid2{display:grid;grid-template-columns:1.55fr 1fr;gap:14px}.panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden}.panel-head{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center}.panel-head strong{font-size:13px}.panel-head span{color:var(--muted);font-size:11px}.panel-body{padding:16px}.network{height:355px;position:relative;background:radial-gradient(circle at 50% 50%,#152333,transparent 42%),#0b1017;overflow:hidden}.network:before{content:"";position:absolute;inset:0;background-image:linear-gradient(#1b2735 1px,transparent 1px),linear-gradient(90deg,#1b2735 1px,transparent 1px);background-size:36px 36px;opacity:.25}.node{position:absolute;width:48px;height:48px;border:1px solid #3a566e;background:#101924;border-radius:12px;display:grid;place-items:center;z-index:2;box-shadow:0 0 24px #000}.node.online{border-color:#356d54}.node.offline{border-color:#6d3940}.node span{font-size:20px}.node small{position:absolute;top:52px;white-space:nowrap;color:#aeb9c8;font-size:9px}.line{position:absolute;height:1px;background:#35516a;transform-origin:left center;z-index:1}.health-row{display:grid;grid-template-columns:80px 1fr 45px;gap:10px;align-items:center;margin:12px 0;color:#aeb8c7;font-size:11px}.bar{height:7px;background:#1a222e;border-radius:99px;overflow:hidden}.bar i{display:block;height:100%;background:var(--accent);border-radius:99px}.bar.blue i{background:var(--blue)}.bar.warn i{background:var(--warn)}.activity{display:grid;gap:2px}.activity-row{display:grid;grid-template-columns:8px 1fr auto;gap:10px;padding:10px 0;border-bottom:1px solid #18202a;align-items:start}.activity-row:last-child{border:0}.activity-row i{width:7px;height:7px;border-radius:50%;background:var(--accent);margin-top:5px}.activity-row i.red{background:var(--danger)}.activity-row b{font-size:11px}.activity-row span,.activity-row time{font-size:10px;color:var(--muted)}table{width:100%;border-collapse:collapse}th{text-align:left;color:#778497;font-size:10px;text-transform:uppercase;letter-spacing:.7px;font-weight:600}th,td{padding:12px 14px;border-bottom:1px solid #19212b}td{font-size:11px}.mono{font-family:"JetBrains Mono",monospace}.badge{padding:4px 7px;border-radius:5px;font-size:9px;font-weight:700}.online{color:var(--accent);background:#0d2118}.offline{color:var(--danger);background:#241116}.unknown{color:var(--warn);background:#211b0d}.toolbar{display:flex;gap:8px;margin-bottom:12px}.toolbar input,.toolbar select{background:#0e131b;border:1px solid var(--line);color:#dce4ee;border-radius:8px;padding:9px 11px;outline:0}.toolbar input{flex:1}.empty{padding:45px;text-align:center;color:var(--muted)}.scanbox{border:1px dashed #304052;background:#0d131b;border-radius:12px;padding:25px;text-align:center;margin-bottom:14px}.scanbox h3{margin:0 0 5px}.scanbox p{color:var(--muted);font-size:12px}.progress{height:8px;background:#17202a;border-radius:99px;overflow:hidden;margin:18px 0}.progress i{display:block;width:0;height:100%;background:linear-gradient(90deg,var(--blue),var(--accent));transition:width .3s}.chips{display:flex;gap:7px;flex-wrap:wrap}.chip{border:1px solid var(--line);padding:6px 9px;border-radius:6px;color:#aab5c5;font-size:10px}.details{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.detail{background:#0c1118;border:1px solid var(--line);padding:12px;border-radius:8px}.detail label{display:block;color:var(--muted);font-size:9px;text-transform:uppercase}.detail b{display:block;margin-top:6px;font-family:"JetBrains Mono";font-size:12px}.modal{position:fixed;inset:0;background:#0009;display:none;place-items:center;z-index:10}.modal.open{display:grid}.modal-card{width:min(900px,92vw);max-height:88vh;overflow:auto;background:#0c1118;border:1px solid #2a3542;border-radius:14px;box-shadow:0 25px 80px #000;padding:18px}.modal-top{display:flex;justify-content:space-between;align-items:center}.close{border:0;background:transparent;color:#9ba7b8;font-size:22px}.toast{position:fixed;right:18px;bottom:18px;background:#111923;border:1px solid #304052;padding:12px 15px;border-radius:9px;display:none;z-index:20}.toast.show{display:block}.danger{color:var(--danger)}@media(max-width:1000px){.kpis{grid-template-columns:repeat(2,1fr)}.grid2{grid-template-columns:1fr}.details{grid-template-columns:repeat(2,1fr)}}@media(max-width:700px){.app{grid-template-columns:1fr}.sidebar{display:none}.top{padding:0 12px}.content{padding:12px}.kpis{grid-template-columns:1fr 1fr}.hero{display:block}.actions{margin-top:12px}.details{grid-template-columns:1fr}.network{height:280px}}
-</style></head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetOps Command — Enterprise Network Monitoring Engine</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
 <body>
-<div class="app">
-<aside class="sidebar"><div class="brand"><div class="brandmark">NS</div><div><strong>NetScope</strong><span>Network Discovery Engine</span></div></div><nav class="nav"><button class="active" data-view="overview">◈ <span>Overview</span></button><button data-view="devices">▦ <span>Discovered Devices</span></button><button data-view="discovery">⌁ <span>Network Discovery</span></button><button data-view="topology">◎ <span>Topology</span></button><button data-view="history">◷ <span>History & Metrics</span></button><button data-view="alerts">⚠ <span>Alerts</span></button></nav><div class="side-bottom"><span class="dot"></span>Discovery engine active<br><span style="margin-left:14px">Local network only</span></div></aside>
-<main class="main"><header class="top"><div><h1>NetScope</h1><p>Automatic network discovery · live device telemetry</p></div><div class="top-actions"><span class="status" id="systemStatus">● SYSTEM READY</span><button class="btn" onclick="runDiscovery()">Scan Network</button></div></header>
-<div class="content">
-<section class="view active" id="view-overview"><div class="hero"><div><h2>Network overview</h2><p>Everything discovered on the active local subnet, using real measurements.</p></div><div class="actions"><button class="btn" onclick="loadData()">Refresh</button><button class="btn primary" onclick="runDiscovery()">Start discovery</button></div></div>
-<div class="kpis"><div class="kpi"><label>Devices</label><b id="kTotal">0</b><small>discovered</small></div><div class="kpi"><label>Online</label><b id="kOnline" style="color:var(--accent)">0</b><small id="kOnlineSub">reachable now</small></div><div class="kpi"><label>Offline</label><b id="kOffline" style="color:var(--danger)">0</b><small>not reachable</small></div><div class="kpi"><label>Avg latency</label><b id="kLatency">—</b><small>from recorded probes</small></div><div class="kpi"><label>Active alerts</label><b id="kAlerts" style="color:var(--warn)">0</b><small>unresolved</small></div></div>
-<div class="grid2"><div class="panel"><div class="panel-head"><strong>Live network map</strong><span id="subnetLabel">Detecting subnet…</span></div><div class="network" id="networkMap"></div></div><div class="panel"><div class="panel-head"><strong>Network health</strong><span>real telemetry</span></div><div class="panel-body"><div class="health-row"><span>Reachability</span><div class="bar"><i id="reachBar" style="width:0"></i></div><b id="reachPct">—</b></div><div class="health-row"><span>Latency</span><div class="bar blue"><i id="latBar" style="width:0"></i></div><b id="latHealth">—</b></div><div class="health-row"><span>Packet loss</span><div class="bar warn"><i id="lossBar" style="width:0"></i></div><b id="lossHealth">—</b></div><div style="height:18px"></div><div class="chips" id="typeChips"></div></div></div></div>
-<div class="panel" style="margin-top:14px"><div class="panel-head"><strong>Recent device activity</strong><span>latest events</span></div><div class="panel-body"><div class="activity" id="activityFeed"></div></div></div></section>
-<section class="view" id="view-devices"><div class="hero"><div><h2>Discovered devices</h2><p>Inventory is populated automatically from the local network scan.</p></div></div><div class="toolbar"><input id="deviceSearch" placeholder="Search name, IP, hostname, MAC, vendor…" oninput="renderDevices()"><select id="deviceFilter" onchange="renderDevices()"><option value="ALL">All types</option><option>ROUTER</option><option>SERVER</option><option>WORKSTATION</option><option>MOBILE</option><option>NETWORK_DEVICE</option><option>UNKNOWN</option></select></div><div class="panel"><table><thead><tr><th>Device</th><th>IP address</th><th>MAC</th><th>Type</th><th>Status</th><th>Latency</th><th>Actions</th></tr></thead><tbody id="deviceRows"></tbody></table></div></section>
-<section class="view" id="view-discovery"><div class="hero"><div><h2>Network discovery</h2><p>Detect local interfaces, scan reachable hosts and import them automatically.</p></div><button class="btn primary" onclick="runDiscovery()">Run discovery now</button></div><div class="scanbox"><h3 id="scanTitle">Ready to discover</h3><p id="scanText">The engine will identify the local IPv4 subnet and probe its hosts. Only local attached networks are scanned.</p><div class="progress"><i id="scanProgress"></i></div><div class="chips" id="networkChips"><span class="chip">Loading local networks…</span></div></div><div class="grid2"><div class="panel"><div class="panel-head"><strong>Discovery rules</strong></div><div class="panel-body"><div class="details"><div class="detail"><label>Strategy</label><b>PING + TCP</b></div><div class="detail"><label>Timeout</label><b>800 ms</b></div><div class="detail"><label>Concurrency</label><b>32 workers</b></div><div class="detail"><label>Import</label><b>AUTO</b></div></div></div></div><div class="panel"><div class="panel-head"><strong>Last scan</strong></div><div class="panel-body" id="lastScan"><div class="empty">No scan executed in this session.</div></div></div></div></section>
-<section class="view" id="view-topology"><div class="hero"><div><h2>Network topology</h2><p>Reachable devices and their observed local-network relationships.</p></div></div><div class="panel"><div class="panel-head"><strong>Discovered topology</strong><span id="topologyCount">0 nodes</span></div><div class="network" id="topologyMap" style="height:560px"></div></div></section>
-<section class="view" id="view-history"><div class="hero"><div><h2>History & metrics</h2><p>Recorded reachability, latency and packet-loss measurements.</p></div></div><div class="panel"><div class="panel-head"><strong>Metric history</strong><span>latest samples</span></div><div class="panel-body"><div id="historyContent"></div></div></div></section>
-<section class="view" id="view-alerts"><div class="hero"><div><h2>Alerts</h2><p>Device state changes and monitoring conditions requiring attention.</p></div></div><div class="panel"><div class="panel-head"><strong>Alert stream</strong><span id="alertCount">0 active</span></div><div class="panel-body"><div class="activity" id="alertsFeed"></div></div></div></section>
-</div></main></div>
-<div class="modal" id="deviceModal"><div class="modal-card"><div class="modal-top"><div><h2 id="modalTitle" style="margin:0;font-size:18px">Device</h2><p id="modalSub" style="margin:4px 0;color:var(--muted);font-size:11px"></p></div><button class="close" onclick="closeModal()">×</button></div><div class="details" id="modalDetails" style="margin-top:18px"></div><div class="panel" style="margin-top:14px"><div class="panel-head"><strong>SNMP / hardware telemetry</strong><span>available when the device exposes SNMP</span></div><div class="panel-body" id="snmpBox"><div class="empty">Querying…</div></div></div><div class="panel" style="margin-top:14px"><div class="panel-head"><strong>Recent ping metrics</strong></div><div class="panel-body" id="modalMetrics"></div></div></div></div><div class="toast" id="toast"></div>
-<script src="app.js"></script></body></html>
+
+  <!-- App Header -->
+  <header class="app-header">
+    <div class="brand-section">
+      <div class="brand-logo">N</div>
+      <div>
+        <div class="brand-title">NetOps Command</div>
+        <div class="brand-sub">Enterprise Network Monitoring & Telemetry</div>
+      </div>
+    </div>
+
+    <!-- Navigation Tabs -->
+    <nav class="nav-tabs">
+      <button class="nav-btn active" data-view="overview">◈ Overview</button>
+      <button class="nav-btn" data-view="inventory">▦ Device Inventory</button>
+      <button class="nav-btn" data-view="discovery">⌁ Subnet Discovery</button>
+      <button class="nav-btn" data-view="topology">◎ Topology Map</button>
+      <button class="nav-btn" data-view="alerts">⚠ Alert Center</button>
+      <button class="nav-btn" data-view="scheduler">⚙ Scheduler</button>
+    </nav>
+
+    <div class="header-actions">
+      <div class="ws-badge" id="wsBadge">
+        <span class="status-dot"></span>
+        <span id="wsStatusText">LIVE TELEMETRY</span>
+      </div>
+      <button class="btn btn-secondary btn-sm" onclick="exportCsv()">📥 Export CSV</button>
+    </div>
+  </header>
+
+  <!-- Main Container -->
+  <main class="main-container">
+
+    <!-- KPI Grid Header -->
+    <div class="kpi-grid">
+      <div class="kpi-card">
+        <div class="kpi-icon blue">🖥</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Total Devices</div>
+          <div class="kpi-value" id="kTotal">0</div>
+          <div class="kpi-sub">Monitored endpoints</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon green">⚡</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Online Reachability</div>
+          <div class="kpi-value" id="kOnline" style="color: var(--online)">0 / 0</div>
+          <div class="kpi-sub" id="kOnlineSub">100% Reachable</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon amber">⚠</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Active Alerts</div>
+          <div class="kpi-value" id="kAlerts" style="color: var(--accent-amber)">0</div>
+          <div class="kpi-sub">Requires attention</div>
+        </div>
+      </div>
+
+      <div class="kpi-card">
+        <div class="kpi-icon purple">⚙</div>
+        <div class="kpi-info">
+          <div class="kpi-label">Worker Scheduler</div>
+          <div class="kpi-value" id="kScheduler" style="color: var(--accent-purple)">ACTIVE</div>
+          <div class="kpi-sub">10 Parallel Threads</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 1. OVERVIEW VIEW -->
+    <section class="view-content active" id="view-overview">
+      <div class="page-hero">
+        <div>
+          <h2>Network Control & Analytics</h2>
+          <p>Real-time telemetric status across all monitored network segments.</p>
+        </div>
+        <div>
+          <button class="btn btn-primary" onclick="openRegisterModal()">+ Register Device</button>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">⚠ Critical Alert Feed</div>
+          </div>
+          <div class="feed-list" id="activityFeed">
+            <div class="empty-state">Loading telemetry alerts...</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header">
+            <div class="card-title">📊 System SLA Summary</div>
+          </div>
+          <div class="feed-list">
+            <div class="feed-item">
+              <div>
+                <div class="feed-title">SLA Availability</div>
+                <div class="feed-sub">Ping reachability ratio</div>
+              </div>
+              <div class="kpi-value" id="slaPct" style="font-size:20px; color:var(--online)">100%</div>
+            </div>
+
+            <div class="feed-item">
+              <div>
+                <div class="feed-title">Avg Latency</div>
+                <div class="feed-sub">Active probe response</div>
+              </div>
+              <div class="kpi-value" id="avgLatencyText" style="font-size:20px; color:var(--primary)">0 ms</div>
+            </div>
+
+            <div class="feed-item">
+              <div>
+                <div class="feed-title">Discovered Subnets</div>
+                <div class="feed-sub" id="subnetListText">Detecting...</div>
+              </div>
+              <span class="badge badge-online">Active (/24)</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 2. DEVICE INVENTORY VIEW -->
+    <section class="view-content" id="view-inventory">
+      <div class="page-hero">
+        <div>
+          <h2>Device Inventory</h2>
+          <p>Registered endpoints, IP addresses, types, and monitoring controls.</p>
+        </div>
+        <button class="btn btn-primary" onclick="openRegisterModal()">+ Register Device</button>
+      </div>
+
+      <div class="toolbar">
+        <div class="search-box">
+          <span class="search-icon">🔍</span>
+          <input type="text" class="search-input" id="deviceSearch" placeholder="Search device name, IP, hostname, MAC, vendor..." oninput="renderDevices()">
+        </div>
+        <select class="form-select" id="deviceFilter" style="width: auto;" onchange="renderDevices()">
+          <option value="ALL">All Device Types</option>
+          <option value="ROUTER">Router</option>
+          <option value="SERVER">Server</option>
+          <option value="WORKSTATION">Workstation</option>
+          <option value="SWITCH">Switch</option>
+          <option value="MOBILE">Mobile</option>
+          <option value="UNKNOWN">Unknown</option>
+        </select>
+      </div>
+
+      <div class="card" style="padding:0; overflow:hidden;">
+        <div class="table-container">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Device Name</th>
+                <th>IP Address</th>
+                <th>MAC Address</th>
+                <th>Type</th>
+                <th>Status</th>
+                <th>Latency</th>
+                <th style="text-align:right">Actions</th>
+              </tr>
+            </thead>
+            <tbody id="deviceRows">
+              <tr><td colspan="7" class="empty-state">No devices found.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 3. SUBNET DISCOVERY VIEW -->
+    <section class="view-content" id="view-discovery">
+      <div class="page-hero">
+        <div>
+          <h2>Subnet Discovery Engine</h2>
+          <p>Scan IPv4 ranges, discover active network endpoints, and auto-import devices.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header">
+          <div class="card-title">🔍 Scan Parameters</div>
+        </div>
+
+        <div class="scan-form-grid">
+          <div class="form-group">
+            <label class="form-label">Subnet Range (CIDR)</label>
+            <input type="text" class="form-input mono" id="subnetRangeInput" value="192.168.1.0/24">
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Strategy</label>
+            <select class="form-select" id="discoveryStrategySelect">
+              <option value="PING">ICMP Ping Scan</option>
+              <option value="TCP">TCP Port Scan</option>
+              <option value="NMAP">Nmap Engine</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label">Worker Threads</label>
+            <input type="number" class="form-input" id="workerThreadsInput" value="40" min="1" max="100">
+          </div>
+
+          <button class="btn btn-primary" id="btnStartScan" onclick="startSubnetScan()">⚡ Start Range Scan</button>
+        </div>
+
+        <div class="progress-container">
+          <div class="progress-bar" id="scanProgressBar"></div>
+        </div>
+
+        <div class="discovery-status-banner" id="discoveryBanner">
+          <div class="discovery-status-text" id="discoveryBannerText">
+            Ready to scan. Enter a subnet CIDR above and click "Start Range Scan".
+          </div>
+          <button class="btn btn-gradient-purple btn-sm" id="btnImportSelected" onclick="importSelectedDiscoveredDevices()" style="display:none;">
+            📥 Import Selected New Devices
+          </button>
+        </div>
+
+        <!-- DISCOVERY RESULTS TABLE -->
+        <div class="table-container" style="margin-top: 16px;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th style="width: 40px; text-align: center;">
+                  <input type="checkbox" id="selectAllDiscovered" onchange="toggleSelectAllDiscovered(this)">
+                </th>
+                <th>IP Address</th>
+                <th>Hostname</th>
+                <th>Suggested Name</th>
+                <th>Device Type</th>
+                <th>Status</th>
+              </tr>
+            </thead>
+            <tbody id="discoveryRows">
+              <tr>
+                <td colspan="6" class="empty-state">No range scan performed yet. Click "Start Range Scan" to discover hosts.</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- 4. TOPOLOGY MAP VIEW -->
+    <section class="view-content" id="view-topology">
+      <div class="page-hero">
+        <div>
+          <h2>Network Topology</h2>
+          <p>Discovered device topology and segment nodes.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="empty-state" style="padding: 60px;">
+          <div style="font-size:36px; margin-bottom:10px;">🌐</div>
+          <h3>Network Topology Map</h3>
+          <p>Visual segment map of active endpoints on 192.168.1.0/24</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- 5. ALERT CENTER VIEW -->
+    <section class="view-content" id="view-alerts">
+      <div class="page-hero">
+        <div>
+          <h2>Alert Center</h2>
+          <p>System alerts, reachability state transitions, and latency warnings.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="feed-list" id="fullAlertsFeed">
+          <div class="empty-state">No alerts recorded.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- 6. SCHEDULER VIEW -->
+    <section class="view-content" id="view-scheduler">
+      <div class="page-hero">
+        <div>
+          <h2>Worker Scheduler Control</h2>
+          <p>Background reachability monitoring thread pool configuration.</p>
+        </div>
+      </div>
+      <div class="card">
+        <div class="feed-list">
+          <div class="feed-item">
+            <div>
+              <div class="feed-title">Monitoring Cycle Service</div>
+              <div class="feed-sub">Runs background ping probes every 10 seconds</div>
+            </div>
+            <button class="btn btn-secondary" onclick="toggleScheduler()">Toggle Scheduler</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- Device Registration Modal -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Register New Device</h3>
+        <button class="close-btn" onclick="closeRegisterModal()">×</button>
+      </div>
+      <form onsubmit="submitRegisterDevice(event)">
+        <div class="form-group">
+          <label class="form-label">Device Name</label>
+          <input type="text" class="form-input" id="regName" required placeholder="e.g. Core Router">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IP Address</label>
+          <input type="text" class="form-input mono" id="regIp" required placeholder="192.168.1.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Device Type</label>
+          <select class="form-select" id="regType">
+            <option value="ROUTER">Router</option>
+            <option value="SERVER">Server</option>
+            <option value="WORKSTATION">Workstation</option>
+            <option value="SWITCH">Switch</option>
+            <option value="MOBILE">Mobile</option>
+            <option value="UNKNOWN">Unknown</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vendor (Optional)</label>
+          <input type="text" class="form-input" id="regVendor" placeholder="e.g. Cisco">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Device Inspection Modal -->
+  <div class="modal-overlay" id="inspectModal">
+    <div class="modal-content" style="max-width: 850px;">
+      <div class="modal-header">
+        <div>
+          <h3 id="inspectTitle">Device Telemetry</h3>
+          <div id="inspectSub" class="feed-sub mono"></div>
+        </div>
+        <button class="close-btn" onclick="closeInspectModal()">×</button>
+      </div>
+      <div id="inspectBody">
+        <div class="empty-state">Loading telemetry...</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <script src="app.js"></script>
+</body>
+</html>

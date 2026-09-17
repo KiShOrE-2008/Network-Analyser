@@ -45,6 +45,9 @@ class MonitoringControllerTest {
     @MockitoBean
     private SnmpService snmpService;
 
+    @MockitoBean
+    private com.networkmonitor.repository.DeviceEventRepository eventRepository;
+
     private PingCheckResponseDto pingResponseDto;
 
     @BeforeEach
