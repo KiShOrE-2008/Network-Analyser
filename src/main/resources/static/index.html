@@ -1,480 +1,530 @@
 <!DOCTYPE html>
-<html class="dark" lang="en">
+<html lang="en">
 <head>
-    <meta charset="utf-8"/>
-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-    <title>NetOps Command - Enterprise Network Dashboard</title>
-    <!-- Material Symbols & Google Fonts -->
-    <link rel="preconnect" href="https://fonts.googleapis.com"/>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin=""/>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Outfit:wght@400;500;600;700&display=swap" rel="stylesheet"/>
-    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
-    
-    <!-- SockJS and STOMP WebSockets -->
-    <script src="https://cdn.jsdelivr.net/npm/sockjs-client@1/dist/sockjs.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/stompjs@2.3.3/lib/stomp.min.js"></script>
-    
-    <!-- Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    colors: {
-                        "primary": "#c0c1ff",
-                        "background": "#0A0B10",
-                        "surface": "#13131b",
-                        "surface-container": "#1f1f27",
-                        "surface-container-low": "#1b1b23",
-                        "surface-container-lowest": "#0d0d15",
-                        "surface-container-high": "#292932",
-                        "on-surface": "#e4e1ed",
-                        "on-surface-variant": "#c7c4d7",
-                        "secondary": "#4edea3",
-                        "tertiary": "#ffb95f",
-                        "error": "#ffb4ab",
-                        "outline-variant": "#464554"
-                    },
-                    spacing: {
-                        "header-height": "64px",
-                        "sidebar-width": "260px",
-                        "container-padding": "24px"
-                    },
-                    fontFamily: {
-                        "display": ["Outfit", "sans-serif"],
-                        "body": ["Inter", "sans-serif"],
-                        "mono": ["Inter", "monospace"]
-                    }
-                }
-            }
-        }
-    </script>
-    <style>
-        body {
-            background-color: #0A0B10;
-            color: #e4e1ed;
-        }
-        .glass-panel {
-            background: rgba(255, 255, 255, 0.03);
-            border: 1px solid rgba(255, 255, 255, 0.08);
-            backdrop-filter: blur(20px);
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        .glass-panel:hover {
-            border-color: rgba(192, 193, 255, 0.4) !important;
-            box-shadow: 0 0 25px rgba(192, 193, 255, 0.18), 0 10px 30px rgba(0, 0, 0, 0.5) !important;
-            transform: translateY(-2px);
-        }
-        aside.sidebar-nav {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-        }
-        aside.sidebar-nav:hover {
-            background: rgba(19, 19, 27, 0.95) !important;
-            border-right-color: rgba(192, 193, 255, 0.3) !important;
-            box-shadow: 10px 0 35px rgba(192, 193, 255, 0.12) !important;
-        }
-        .pulse-emerald { animation: pulseEmerald 2s infinite; }
-        @keyframes pulseEmerald {
-            0% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(78, 222, 163, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(78, 222, 163, 0); }
-        }
-        .pulse-rose { animation: pulseRose 2s infinite; }
-        @keyframes pulseRose {
-            0% { box-shadow: 0 0 0 0 rgba(255, 180, 171, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(255, 180, 171, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 180, 171, 0); }
-        }
-        .pulse-amber { animation: pulseAmber 2s infinite; }
-        @keyframes pulseAmber {
-            0% { box-shadow: 0 0 0 0 rgba(255, 185, 95, 0.7); }
-            70% { box-shadow: 0 0 0 6px rgba(255, 185, 95, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(255, 185, 95, 0); }
-        }
-        ::-webkit-scrollbar { width: 6px; }
-        ::-webkit-scrollbar-track { background: transparent; }
-        ::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.1); border-radius: 10px; }
-        ::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.2); }
-    </style>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>NetScope — Network Discovery & Monitoring</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
 </head>
-<body class="font-body text-sm antialiased overflow-x-hidden min-h-screen">
+<body>
 
-    <!-- Top Navigation Bar -->
-    <nav class="fixed top-0 w-full h-header-height z-50 bg-surface/80 backdrop-blur-2xl border-b border-white/10 flex justify-between items-center px-container-padding">
-        <div class="flex items-center gap-4">
-            <span class="font-display text-xl font-bold text-primary tracking-tight">NetOps Command</span>
-            <span class="text-xs text-on-surface-variant hidden sm:inline-block">| Enterprise Network Monitoring Engine</span>
+  <div class="app-layout">
+    <!-- persistent SIDEBAR -->
+    <aside class="app-sidebar" id="sidebar">
+      <div class="sidebar-brand">
+        <div class="brand-logo">N</div>
+        <div class="brand-text">
+          <div class="brand-title">NETSCOPE</div>
+          <div class="brand-subtitle">NETWORK MONITORING</div>
         </div>
+      </div>
 
-        <div class="flex items-center gap-4">
-            <div id="ws-connection-badge" class="flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-secondary border border-secondary/20">
-                <span class="w-2 h-2 rounded-full bg-secondary pulse-emerald"></span>
-                <span>LIVE WS CONNECTED</span>
-            </div>
+      <nav class="sidebar-nav">
+        <button class="nav-item active" data-view="overview">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
+          <span>Overview</span>
+        </button>
+        <button class="nav-item" data-view="devices">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+          <span>Devices</span>
+        </button>
+        <button class="nav-item" data-view="discovery">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+          <span>Discovery</span>
+        </button>
+        <button class="nav-item" data-view="monitoring">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+          <span>Monitoring</span>
+        </button>
+        <button class="nav-item" data-view="alerts">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span>Alerts</span>
+          <span class="nav-badge" id="navAlertBadge" style="display:none;">0</span>
+        </button>
+        <button class="nav-item" data-view="reports">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
+          <span>Reports</span>
+        </button>
+      </nav>
 
-            <button class="p-2 text-on-surface-variant hover:bg-white/5 transition-colors rounded-full relative" onclick="switchTab('alerts')">
-                <span class="material-symbols-outlined text-[20px]">notifications</span>
-                <span id="unread-alert-dot" class="absolute top-1.5 right-1.5 w-2 h-2 bg-error rounded-full animate-pulse"></span>
-            </button>
-            
-            <a href="/api/reports/export/csv" download target="_blank" class="p-2 text-on-surface-variant hover:bg-white/5 transition-colors rounded-full" title="Download CSV Report">
-                <span class="material-symbols-outlined text-[20px]">download</span>
-            </a>
+      <div class="sidebar-footer">
+        <div class="footer-info-row">
+          <span class="info-label">NETWORK</span>
+          <span class="info-val mono" id="sbNetworkCidr">Detecting...</span>
         </div>
-    </nav>
-
-    <!-- Side Navigation Bar -->
-    <aside class="sidebar-nav hidden md:flex fixed left-0 top-header-height w-sidebar-width h-[calc(100vh-64px)] z-40 bg-surface-container-lowest/50 backdrop-blur-xl border-r border-white/5 flex-col py-6">
-        <div class="px-6 mb-6">
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center border border-primary/20">
-                    <span class="material-symbols-outlined text-primary">dns</span>
-                </div>
-                <div>
-                    <h2 class="font-display font-semibold text-on-surface text-base">Network Engine</h2>
-                    <p class="text-xs text-on-surface-variant">Active Subnet Monitor</p>
-                </div>
-            </div>
-            <button class="mt-4 w-full bg-primary text-background font-medium py-2 rounded text-sm hover:bg-primary/90 transition-colors active:scale-95 shadow-[0_0_15px_rgba(192,193,255,0.2)]" onclick="document.getElementById('register-modal').style.display='flex'">
-                + Register Device
-            </button>
+        <div class="footer-info-row">
+          <span class="info-label">SYSTEM</span>
+          <span class="info-status" id="sbSystemStatus">
+            <span class="status-dot green"></span> Operational
+          </span>
         </div>
-
-        <nav class="flex-1 px-4 space-y-1">
-            <button class="nav-btn active w-full flex items-center gap-3 px-4 py-3 rounded-lg text-primary bg-primary/10 border-r-4 border-primary transition-all text-xs font-bold uppercase tracking-wider" data-tab="overview">
-                <span class="material-symbols-outlined text-[20px]">dashboard</span> Overview
-            </button>
-            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-wider" data-tab="devices">
-                <span class="material-symbols-outlined text-[20px]">hub</span> Device Inventory
-            </button>
-            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-wider" data-tab="discovery">
-                <span class="material-symbols-outlined text-[20px]">search</span> Subnet Discovery
-            </button>
-            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-wider" data-tab="alerts">
-                <span class="material-symbols-outlined text-[20px]">shield</span> Alert Center
-            </button>
-            <button class="nav-btn w-full flex items-center gap-3 px-4 py-3 rounded-lg text-on-surface-variant hover:text-primary hover:bg-white/5 transition-all text-xs font-bold uppercase tracking-wider" data-tab="scheduler">
-                <span class="material-symbols-outlined text-[20px]">settings</span> Worker Scheduler
-            </button>
-        </nav>
-
-        <div class="px-6 mt-auto border-t border-white/5 pt-4">
-            <div class="flex items-center gap-2 text-xs text-on-surface-variant">
-                <span class="material-symbols-outlined text-secondary text-[16px]">sync</span>
-                <span>Auto-Refresh: Active</span>
-            </div>
-        </div>
+      </div>
     </aside>
 
-    <!-- Main Content Canvas -->
-    <main class="pt-[88px] md:pl-[284px] pr-6 pb-6 min-h-screen space-y-8">
-        
-        <!-- Header Section -->
-        <header class="flex justify-between items-end">
+    <!-- MAIN CONTENT AREA -->
+    <div class="app-main">
+      <!-- TOP BAR -->
+      <header class="app-topbar">
+        <div class="topbar-left">
+          <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+          <h1 class="topbar-title" id="pageTitle">Overview</h1>
+        </div>
+
+        <div class="topbar-right">
+          <div class="sys-badge" id="topSysBadge">
+            <span class="status-dot green"></span>
+            <span id="topSysText">SYSTEM OPERATIONAL</span>
+          </div>
+          <span class="last-updated" id="lastUpdatedText">Last updated: --:--:--</span>
+          <button class="btn btn-secondary btn-sm" onclick="refreshData()" title="Refresh Telemetry">
+            ↻ Refresh
+          </button>
+          <button class="btn btn-primary btn-sm" onclick="openRegisterModal()">
+            + Register Device
+          </button>
+        </div>
+      </header>
+
+      <!-- VIEW PANELS -->
+      <main class="content-body">
+
+        <!-- 1. OVERVIEW VIEW -->
+        <section class="view-panel active" id="view-overview">
+          <div class="section-hero">
             <div>
-                <h1 class="font-display text-2xl font-semibold text-on-surface">Network Control & Analytics</h1>
-                <p class="text-sm text-on-surface-variant mt-1">Real-time telemetric status across all monitored network segments.</p>
+              <h2 class="section-title">NETWORK OVERVIEW</h2>
+              <p class="section-desc">Real-time visibility into discovered devices and network health.</p>
             </div>
-        </header>
+            <button class="btn btn-primary btn-sm" onclick="switchView('discovery')">
+              ⚡ Scan Network
+            </button>
+          </div>
 
-        <!-- KPI Grid Cards -->
-        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-5">
-            <div class="glass-panel rounded-xl p-5 relative overflow-hidden flex flex-col justify-between h-32 transition-all">
-                <div class="flex justify-between items-start z-10">
-                    <span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Total Devices</span>
-                    <span class="material-symbols-outlined text-primary text-[20px]">router</span>
-                </div>
-                <div class="z-10 mt-auto">
-                    <div class="font-display text-3xl font-semibold text-on-surface" id="kpi-total-devices">0</div>
-                </div>
-            </div>
-
-            <div class="glass-panel rounded-xl p-5 relative overflow-hidden flex flex-col justify-between h-32 transition-all">
-                <div class="flex justify-between items-start z-10">
-                    <span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Online Reachability</span>
-                    <div class="w-2.5 h-2.5 rounded-full bg-secondary pulse-emerald"></div>
-                </div>
-                <div class="z-10 mt-auto">
-                    <div class="font-display text-3xl font-semibold text-secondary" id="kpi-online-devices">0 / 0</div>
-                </div>
+          <!-- KPI CARDS GRID -->
+          <div class="kpi-grid">
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">TOTAL DEVICES</span>
+                <span class="kpi-icon blue">🖥</span>
+              </div>
+              <div class="kpi-value" id="kTotal">N/A</div>
+              <div class="kpi-sub">Discovered on local network</div>
             </div>
 
-            <div class="glass-panel rounded-xl p-5 relative overflow-hidden flex flex-col justify-between h-32 transition-all">
-                <div class="flex justify-between items-start z-10">
-                    <span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Active Alerts</span>
-                    <div class="w-2.5 h-2.5 rounded-full bg-error pulse-rose"></div>
-                </div>
-                <div class="z-10 mt-auto">
-                    <div class="font-display text-3xl font-semibold text-error" id="kpi-active-alerts">0</div>
-                </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">ONLINE</span>
+                <span class="kpi-icon green">⚡</span>
+              </div>
+              <div class="kpi-value green-text" id="kOnline">N/A</div>
+              <div class="kpi-sub" id="kOnlinePct">Reachable endpoints</div>
             </div>
 
-            <div class="glass-panel rounded-xl p-5 relative overflow-hidden flex flex-col justify-between h-32 transition-all">
-                <div class="flex justify-between items-start z-10">
-                    <span class="text-xs font-bold uppercase tracking-wider text-on-surface-variant">Worker Scheduler</span>
-                    <div class="w-2.5 h-2.5 rounded-full bg-tertiary pulse-amber"></div>
-                </div>
-                <div class="z-10 mt-auto">
-                    <div class="font-display text-3xl font-semibold text-tertiary" id="kpi-scheduler-status">ACTIVE</div>
-                </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">OFFLINE</span>
+                <span class="kpi-icon red">⚠</span>
+              </div>
+              <div class="kpi-value red-text" id="kOffline">N/A</div>
+              <div class="kpi-sub">Requires attention</div>
             </div>
-        </div>
 
-        <!-- TAB 1: OVERVIEW -->
-        <section id="tab-overview" class="tab-content space-y-6">
-            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <!-- Critical Alert Feed (Takes 2 Columns) -->
-                <div class="lg:col-span-2 glass-panel rounded-xl border border-white/5 p-6">
-                    <div class="flex justify-between items-center mb-6">
-                        <h3 class="font-display text-lg font-medium text-on-surface flex items-center gap-2">
-                            <span class="material-symbols-outlined text-error">warning</span> Critical Alert Feed
-                        </h3>
-                        <button class="text-primary text-xs font-bold uppercase tracking-wider hover:underline" onclick="switchTab('alerts')">View All Alerts →</button>
-                    </div>
-                    <div id="overview-active-alerts" class="space-y-3">
-                        <!-- Dynamic Alerts Feed -->
-                    </div>
-                </div>
-
-                <!-- Quick Telemetry & CSV Export Box -->
-                <div class="glass-panel rounded-xl border border-white/5 p-6 space-y-4">
-                    <h3 class="font-display text-lg font-medium text-on-surface flex items-center gap-2">
-                        <span class="material-symbols-outlined text-secondary">analytics</span> System SLA Summary
-                    </h3>
-                    <div class="space-y-3 text-xs">
-                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
-                            <span class="text-on-surface-variant font-bold uppercase">SLA Availability</span>
-                            <span id="overview-sla-percent" class="font-mono text-base font-bold text-secondary">99.8%</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
-                            <span class="text-on-surface-variant font-bold uppercase">Avg Latency</span>
-                            <span id="overview-avg-latency" class="font-mono text-base font-bold text-primary">12.4 ms</span>
-                        </div>
-                        <div class="flex justify-between items-center p-3 bg-white/5 rounded-lg border border-white/5">
-                            <span class="text-on-surface-variant font-bold uppercase">Discovered Subnets</span>
-                            <span class="font-mono text-base font-bold text-tertiary">Active (/24)</span>
-                        </div>
-                    </div>
-                    <a href="/api/reports/export/csv" download target="_blank" class="w-full mt-4 bg-white/5 border border-white/10 text-primary font-medium py-2.5 rounded-lg text-xs flex items-center justify-center gap-2 hover:bg-white/10 transition-colors">
-                        <span class="material-symbols-outlined text-[18px]">download</span> Export Device Inventory CSV
-                    </a>
-                </div>
+            <div class="kpi-card">
+              <div class="kpi-header">
+                <span class="kpi-label">AVERAGE LATENCY</span>
+                <span class="kpi-icon purple">⏱</span>
+              </div>
+              <div class="kpi-value" id="kAvgLatency">N/A</div>
+              <div class="kpi-sub">Across reachable devices</div>
             </div>
-        </section>
+          </div>
 
-        <!-- TAB 2: DEVICE INVENTORY -->
-        <section id="tab-devices" class="tab-content hidden space-y-6">
-            <div class="glass-panel rounded-xl border border-white/5 overflow-hidden">
-                <div class="p-6 border-b border-white/10 flex flex-wrap gap-4 justify-between items-center bg-surface-container-lowest/30">
-                    <div class="flex items-center bg-white/5 border border-white/10 rounded-full px-4 py-2 flex-1 min-width-[240px]">
-                        <span class="material-symbols-outlined text-on-surface-variant text-sm mr-2">search</span>
-                        <input type="text" id="search-devices-input" class="bg-transparent border-none text-sm text-on-surface focus:outline-none focus:ring-0 placeholder-on-surface-variant/50 w-full" placeholder="Search devices by Name, IP Address, or Hostname...">
-                    </div>
-                    <div class="flex items-center gap-3">
-                        <select id="filter-device-type" class="bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface focus:outline-none focus:border-primary">
-                            <option value="ALL">All Device Types</option>
-                            <option value="ROUTER">Router</option>
-                            <option value="SWITCH">Switch</option>
-                            <option value="SERVER">Server</option>
-                            <option value="PRINTER">Printer</option>
-                            <option value="WORKSTATION">Workstation</option>
-                        </select>
-                    </div>
-                </div>
-
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left border-collapse">
-                        <thead>
-                            <tr class="border-b border-white/10 bg-surface-container-low/50 text-xs font-bold uppercase tracking-wider text-on-surface-variant">
-                                <th class="py-3 px-6">Device Name</th>
-                                <th class="py-3 px-6">IP Address</th>
-                                <th class="py-3 px-6">Type</th>
-                                <th class="py-3 px-6">Status</th>
-                                <th class="py-3 px-6">Health</th>
-                                <th class="py-3 px-6">Monitoring</th>
-                                <th class="py-3 px-6 text-right">Actions</th>
-                            </tr>
-                        </thead>
-                        <tbody id="devices-table-body" class="divide-y divide-white/5 font-mono text-sm text-on-surface">
-                            <!-- Dynamic Rows -->
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 3: SUBNET DISCOVERY -->
-        <section id="tab-discovery" class="tab-content hidden space-y-6">
-            <div class="glass-panel rounded-xl border border-white/5 p-6">
-                <h3 class="font-display text-lg font-medium text-on-surface mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-primary">travel_explore</span> Subnet Discovery Engine
-                </h3>
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-white/5 p-4 rounded-xl border border-white/10 mb-6">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Subnet Range (CIDR)</label>
-                        <input type="text" id="subnet-cidr-input" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" value="192.168.1.0/24">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Strategy</label>
-                        <select id="subnet-strategy-select" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface">
-                            <option value="PING">ICMP Ping Scan</option>
-                            <option value="TCP">TCP Port Check</option>
-                            <option value="NMAP">Advanced Nmap Scan</option>
-                        </select>
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Worker Threads</label>
-                        <input type="number" id="subnet-threads-input" class="w-full bg-surface-container border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" value="20" min="1" max="50">
-                    </div>
-                    <div class="flex items-end">
-                        <button class="w-full bg-primary text-background font-medium py-2 rounded-lg text-sm hover:bg-primary/90 transition-colors" onclick="startSubnetScan()">Start Range Scan</button>
-                    </div>
-                </div>
-
-                <div id="discovery-results-container" class="space-y-4">
-                    <div class="text-center text-on-surface-variant py-12">
-                        Enter a CIDR subnet range above and click "Start Range Scan" to discover reachable devices.
-                    </div>
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 4: ALERT CENTER -->
-        <section id="tab-alerts" class="tab-content hidden space-y-6">
-            <div class="glass-panel rounded-xl border border-white/5 p-6">
-                <h3 class="font-display text-lg font-medium text-on-surface mb-6 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-error">shield</span> Security & Health Alerts
-                </h3>
-                <div id="alerts-list-container" class="space-y-3">
-                    <!-- Dynamic Alerts -->
-                </div>
-            </div>
-        </section>
-
-        <!-- TAB 5: SCHEDULER CONTROL -->
-        <section id="tab-scheduler" class="tab-content hidden space-y-6">
-            <div class="glass-panel rounded-xl border border-white/5 p-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h3 class="font-display text-lg font-medium text-on-surface flex items-center gap-2">
-                        <span class="material-symbols-outlined text-tertiary">settings</span> Automatic Scheduler Engine
-                    </h3>
-                    <div class="flex gap-2">
-                        <button class="bg-secondary/20 text-secondary border border-secondary/30 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-secondary hover:text-background transition-colors" onclick="toggleScheduler(true)">▶ Start</button>
-                        <button class="bg-error/20 text-error border border-error/30 px-4 py-2 rounded-lg text-xs font-bold uppercase tracking-wider hover:bg-error hover:text-on-error transition-colors" onclick="toggleScheduler(false)">⏸ Pause</button>
-                    </div>
-                </div>
-
-                <div class="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                    <div class="glass-panel p-4 rounded-lg border border-white/5">
-                        <div class="text-xs text-on-surface-variant font-bold uppercase">Status</div>
-                        <div id="sched-active-state" class="text-xl font-bold text-secondary mt-1">ACTIVE</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-lg border border-white/5">
-                        <div class="text-xs text-on-surface-variant font-bold uppercase">Worker Pool</div>
-                        <div id="sched-pool-size" class="text-xl font-bold text-primary mt-1">10 Threads</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-lg border border-white/5">
-                        <div class="text-xs text-on-surface-variant font-bold uppercase">Last Run</div>
-                        <div id="sched-last-run" class="text-sm font-semibold text-on-surface mt-1">-</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-lg border border-white/5">
-                        <div class="text-xs text-on-surface-variant font-bold uppercase">Cycle Duration</div>
-                        <div id="sched-last-duration" class="text-xl font-bold text-tertiary mt-1">0 ms</div>
-                    </div>
-                    <div class="glass-panel p-4 rounded-lg border border-white/5">
-                        <div class="text-xs text-on-surface-variant font-bold uppercase">Devices Scanned</div>
-                        <div id="sched-devices-scanned" class="text-xl font-bold text-on-surface mt-1">0</div>
-                    </div>
-                </div>
-            </div>
-        </section>
-    </main>
-
-    <!-- Register Device Modal -->
-    <div id="register-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center hidden">
-        <div class="glass-panel bg-surface-container rounded-xl border border-white/10 p-6 w-full max-w-lg shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h3 class="font-display text-lg font-semibold text-on-surface">+ Register New Device</h3>
-                <button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('register-modal')">✕</button>
-            </div>
-            <form onsubmit="submitDeviceForm(event)" class="space-y-4">
+          <!-- SPLIT LAYOUT: MAP + RECENT ACTIVITY -->
+          <div class="grid-layout-2">
+            <!-- NETWORK MAP CARD -->
+            <div class="card card-glow">
+              <div class="card-header">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Device Name *</label>
-                    <input type="text" id="dev-name" required class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" placeholder="e.g. Core Gateway Router">
+                  <h3 class="card-title">DISCOVERED DEVICES MAP</h3>
+                  <div class="card-sub">Visual layout of active endpoints on subnet</div>
                 </div>
+                <button class="btn btn-secondary btn-sm" onclick="refreshData()">Refresh Map</button>
+              </div>
+              <div class="network-map-container" id="networkMapContainer">
+                <div class="empty-state">Loading network map...</div>
+              </div>
+            </div>
+
+            <!-- RECENT ACTIVITY FEED -->
+            <div class="card">
+              <div class="card-header">
                 <div>
-                    <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">IPv4 Address *</label>
-                    <input type="text" id="dev-ip" required class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" placeholder="e.g. 192.168.1.1">
+                  <h3 class="card-title">RECENT ACTIVITY</h3>
+                  <div class="card-sub">Latest reachability state events & alerts</div>
                 </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Device Type *</label>
-                    <select id="dev-type" required class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface">
-                        <option value="ROUTER">Router</option>
-                        <option value="SWITCH">Switch</option>
-                        <option value="SERVER">Server</option>
-                        <option value="PRINTER">Printer</option>
-                        <option value="WORKSTATION">Workstation</option>
-                    </select>
-                </div>
-                <div>
-                    <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Hostname</label>
-                    <input type="text" id="dev-hostname" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" placeholder="e.g. router.internal">
-                </div>
-                <div class="grid grid-cols-2 gap-3">
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Vendor</label>
-                        <input type="text" id="dev-vendor" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" placeholder="e.g. Cisco">
-                    </div>
-                    <div>
-                        <label class="block text-xs font-bold uppercase text-on-surface-variant mb-1">Model</label>
-                        <input type="text" id="dev-model" class="w-full bg-surface-container-low border border-outline-variant rounded-lg px-3 py-2 text-sm text-on-surface" placeholder="e.g. ISR 4331">
-                    </div>
-                </div>
-                <div class="flex justify-end gap-3 pt-4 border-t border-white/5">
-                    <button type="button" class="px-4 py-2 glass-panel text-on-surface rounded-lg text-sm" onclick="closeModal('register-modal')">Cancel</button>
-                    <button type="submit" class="px-4 py-2 bg-primary text-background font-medium rounded-lg text-sm hover:bg-primary/90">Save & Register</button>
-                </div>
-            </form>
-        </div>
+                <button class="btn btn-secondary btn-sm" onclick="switchView('alerts')">View All</button>
+              </div>
+              <div class="activity-feed" id="overviewActivityFeed">
+                <div class="empty-state">Loading activity feed...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 2. DEVICES VIEW -->
+        <section class="view-panel" id="view-devices">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">DEVICES</h2>
+              <p class="section-desc">Registered endpoints, IP addresses, vendors, and latency monitoring.</p>
+            </div>
+            <div class="hero-actions">
+              <button class="btn btn-secondary btn-sm" onclick="switchView('discovery')">⚡ Scan Network</button>
+              <button class="btn btn-primary btn-sm" onclick="openRegisterModal()">+ Register Device</button>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="search-box">
+              <span class="search-icon">🔍</span>
+              <input type="text" class="search-input" id="deviceSearch" placeholder="Search devices by IP, name, hostname, MAC, vendor..." oninput="renderDevices()">
+            </div>
+            <div class="filter-group">
+              <select class="form-select" id="deviceTypeFilter" onchange="renderDevices()">
+                <option value="ALL">All Types</option>
+                <option value="ROUTER">Router</option>
+                <option value="SERVER">Server</option>
+                <option value="WORKSTATION">Workstation</option>
+                <option value="SWITCH">Switch</option>
+                <option value="MOBILE">Mobile</option>
+                <option value="UNKNOWN">Unknown</option>
+              </select>
+              <select class="form-select" id="deviceStatusFilter" onchange="renderDevices()">
+                <option value="ALL">All Status</option>
+                <option value="ONLINE">Online</option>
+                <option value="OFFLINE">Offline</option>
+                <option value="UNKNOWN">Unknown</option>
+              </select>
+            </div>
+          </div>
+
+          <div class="card table-card">
+            <div class="table-container">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th>STATUS</th>
+                    <th>DEVICE</th>
+                    <th>IP ADDRESS</th>
+                    <th>HOSTNAME</th>
+                    <th>MAC ADDRESS</th>
+                    <th>VENDOR</th>
+                    <th>TYPE</th>
+                    <th>LATENCY</th>
+                    <th>LAST SEEN</th>
+                    <th style="text-align:right">ACTIONS</th>
+                  </tr>
+                </thead>
+                <tbody id="deviceRows">
+                  <tr><td colspan="10" class="empty-state">Loading device inventory...</td></tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 3. DISCOVERY VIEW -->
+        <section class="view-panel" id="view-discovery">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">NETWORK DISCOVERY</h2>
+              <p class="section-desc">Probing attached interfaces, subnet scanning, and host onboarding.</p>
+            </div>
+            <button class="btn btn-gradient-purple btn-sm" onclick="triggerAutoDiscovery()">
+              ⚡ Run Auto-Discovery
+            </button>
+          </div>
+
+          <!-- LOCAL NETWORK INFO CARD -->
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">LOCAL NETWORK INTERFACES</h3>
+            </div>
+            <div class="local-net-grid" id="localNetworkGrid">
+              <div class="empty-state">Detecting local interfaces...</div>
+            </div>
+          </div>
+
+          <!-- SUBNET SCAN CONTROL CARD -->
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">SUBNET RANGE SCANNER</h3>
+            </div>
+
+            <div class="scan-form-grid">
+              <div class="form-group">
+                <label class="form-label">Subnet Range (CIDR)</label>
+                <input type="text" class="form-input mono" id="subnetRangeInput" value="192.168.1.0/24">
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Strategy</label>
+                <select class="form-select" id="discoveryStrategySelect">
+                  <option value="PING">ICMP Ping Scan</option>
+                  <option value="TCP">TCP Port Scan</option>
+                  <option value="NMAP">Nmap Engine</option>
+                </select>
+              </div>
+
+              <div class="form-group">
+                <label class="form-label">Worker Threads</label>
+                <input type="number" class="form-input" id="workerThreadsInput" value="40" min="1" max="100">
+              </div>
+
+              <button class="btn btn-primary" id="btnStartScan" onclick="startSubnetScan()">
+                ⚡ Start Range Scan
+              </button>
+            </div>
+
+            <div class="progress-container">
+              <div class="progress-bar" id="scanProgressBar"></div>
+            </div>
+
+            <div class="discovery-status-banner" id="discoveryBanner">
+              <div class="discovery-status-text" id="discoveryBannerText">
+                Ready to scan. Select a subnet range above and click "Start Range Scan".
+              </div>
+              <button class="btn btn-gradient-purple btn-sm" id="btnImportSelected" onclick="importSelectedDiscoveredDevices()" style="display:none;">
+                📥 Import Selected Devices
+              </button>
+            </div>
+
+            <!-- DISCOVERY RESULTS TABLE -->
+            <div class="table-container" style="margin-top: 16px;">
+              <table class="data-table">
+                <thead>
+                  <tr>
+                    <th style="width: 40px; text-align: center;">
+                      <input type="checkbox" id="selectAllDiscovered" onchange="toggleSelectAllDiscovered(this)">
+                    </th>
+                    <th>IP ADDRESS</th>
+                    <th>HOSTNAME</th>
+                    <th>SUGGESTED NAME</th>
+                    <th>DEVICE TYPE</th>
+                    <th>STATUS</th>
+                  </tr>
+                </thead>
+                <tbody id="discoveryRows">
+                  <tr>
+                    <td colspan="6" class="empty-state">No range scan performed yet. Click "Start Range Scan" to discover hosts.</td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <!-- 4. MONITORING VIEW -->
+        <section class="view-panel" id="view-monitoring">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">MONITORING CONTROLS</h2>
+              <p class="section-desc">Background reachability worker pool state and thread diagnostics.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="card-header">
+              <h3 class="card-title">SCHEDULER STATUS</h3>
+            </div>
+            <div class="scheduler-details-grid" id="schedulerDetails">
+              <div class="empty-state">Loading scheduler state...</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 5. ALERTS VIEW -->
+        <section class="view-panel" id="view-alerts">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">ALERT CENTER</h2>
+              <p class="section-desc">System notifications, host state transitions, and reachability alarms.</p>
+            </div>
+          </div>
+
+          <div class="toolbar">
+            <div class="filter-group">
+              <button class="btn btn-secondary btn-sm active-filter" data-alert-filter="ALL" onclick="filterAlerts('ALL')">All Alerts</button>
+              <button class="btn btn-secondary btn-sm" data-alert-filter="ACTIVE" onclick="filterAlerts('ACTIVE')">Active Alarms</button>
+              <button class="btn btn-secondary btn-sm" data-alert-filter="RESOLVED" onclick="filterAlerts('RESOLVED')">Resolved</button>
+            </div>
+          </div>
+
+          <div class="card">
+            <div class="activity-feed" id="fullAlertsFeed">
+              <div class="empty-state">No alerts recorded.</div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 6. REPORTS VIEW -->
+        <section class="view-panel" id="view-reports">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">REPORTS & EXPORT</h2>
+              <p class="section-desc">Network telemetry summary metrics and device inventory export.</p>
+            </div>
+            <button class="btn btn-primary btn-sm" onclick="exportCsv()">
+              📥 Export CSV
+            </button>
+          </div>
+
+          <div class="card" style="margin-bottom: 24px;">
+            <div class="card-header">
+              <h3 class="card-title">SYSTEM SUMMARY REPORT</h3>
+            </div>
+            <div class="report-summary-grid" id="reportSummaryGrid">
+              <div class="empty-state">Generating report summary...</div>
+            </div>
+          </div>
+        </section>
+
+      </main>
+    </div>
+  </div>
+
+  <!-- SLIDE-IN DEVICE DETAILS DRAWER -->
+  <div class="drawer-overlay" id="drawerOverlay" onclick="closeDeviceDetails()"></div>
+  <aside class="device-drawer" id="deviceDrawer">
+    <div class="drawer-header">
+      <div>
+        <div class="drawer-title" id="drawerDeviceName">Device Details</div>
+        <div class="drawer-sub mono" id="drawerIpAddress">--.--.--.--</div>
+      </div>
+      <button class="close-btn" onclick="closeDeviceDetails()">×</button>
     </div>
 
-    <!-- Device Deep-Dive Modal -->
-    <div id="device-modal" class="fixed inset-0 z-50 bg-black/80 backdrop-blur-md flex items-center justify-center hidden">
-        <div class="glass-panel bg-surface-container rounded-xl border border-white/10 p-6 w-full max-w-3xl max-h-[90vh] overflow-y-auto shadow-2xl">
-            <div class="flex justify-between items-center mb-6">
-                <h3 id="modal-device-name" class="font-display text-lg font-semibold text-on-surface">Device Deep-Dive</h3>
-                <button class="text-on-surface-variant hover:text-on-surface" onclick="closeModal('device-modal')">✕</button>
-            </div>
+    <div class="drawer-body">
+      <!-- DEVICE STATUS BADGE -->
+      <div style="margin-bottom: 20px;" id="drawerStatusBadgeContainer">
+        <span class="badge badge-offline" id="drawerStatusBadge">● OFFLINE</span>
+      </div>
 
-            <div class="flex gap-2 mb-6">
-                <button class="bg-primary/20 text-primary border border-primary/30 px-3 py-1.5 rounded-lg text-xs font-bold uppercase" onclick="triggerPingCheck(state.selectedDevice.id)">⚡ Ping Check</button>
-                <button class="glass-panel px-3 py-1.5 rounded-lg text-xs font-bold uppercase hover:text-primary" onclick="triggerPortScan(state.selectedDevice.id)">🔌 TCP Ports</button>
-                <button class="glass-panel px-3 py-1.5 rounded-lg text-xs font-bold uppercase hover:text-tertiary" onclick="triggerNmapScan(state.selectedDevice.id)">🔍 Nmap Audit</button>
-                <button class="glass-panel px-3 py-1.5 rounded-lg text-xs font-bold uppercase hover:text-secondary" onclick="triggerSnmpCheck(state.selectedDevice.id)">📊 SNMP Metrics</button>
-            </div>
+      <!-- IDENTITY SECTION -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">IDENTITY</div>
+        <div class="info-pair"><span class="info-key">Hostname</span><span class="info-val mono" id="drawerHostname">N/A</span></div>
+        <div class="info-pair"><span class="info-key">MAC Address</span><span class="info-val mono" id="drawerMac">N/A</span></div>
+        <div class="info-pair"><span class="info-key">Vendor</span><span class="info-val" id="drawerVendor">N/A</span></div>
+        <div class="info-pair"><span class="info-key">Device Type</span><span class="info-val" id="drawerType">N/A</span></div>
+        <div class="info-pair"><span class="info-key">OS Hint</span><span class="info-val" id="drawerOs">N/A</span></div>
+      </div>
 
-            <div class="space-y-6">
-                <div>
-                    <h4 class="text-xs font-bold uppercase text-on-surface-variant mb-2">Latency History (Last 50 Checks)</h4>
-                    <div id="metrics-chart-container" class="w-full h-44 bg-surface-container-low rounded-lg border border-white/5 p-4 relative"></div>
-                </div>
+      <!-- CONNECTIVITY SECTION -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">CONNECTIVITY</div>
+        <div class="info-pair"><span class="info-key">Latency</span><span class="info-val mono" id="drawerLatency">N/A</span></div>
+        <div class="info-pair"><span class="info-key">Packet Loss</span><span class="info-val mono" id="drawerPacketLoss">N/A</span></div>
+        <div class="info-pair"><span class="info-key">Last Seen</span><span class="info-val" id="drawerLastSeen">N/A</span></div>
+      </div>
 
-                <div>
-                    <h4 class="text-xs font-bold uppercase text-on-surface-variant mb-2">TCP Service Port Status</h4>
-                    <div id="device-ports-container" class="grid grid-cols-2 sm:grid-cols-4 gap-3"></div>
-                </div>
+      <!-- SNMP TELEMETRY SECTION -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">SNMP TELEMETRY</div>
+        <div class="info-pair"><span class="info-key">CPU Usage</span><span class="info-val" id="drawerCpu">N/A</span></div>
+        <div class="info-pair"><span class="info-key">Memory Usage</span><span class="info-val" id="drawerMemory">N/A</span></div>
+        <div class="info-pair"><span class="info-key">System Uptime</span><span class="info-val" id="drawerUptime">N/A</span></div>
+      </div>
 
-                <div>
-                    <h4 class="text-xs font-bold uppercase text-on-surface-variant mb-2">Advanced Fingerprint & Hardware Audit</h4>
-                    <div id="nmap-result-container" class="bg-surface-container-low p-4 rounded-lg border border-white/5 text-xs font-mono"></div>
-                </div>
-            </div>
+      <!-- OPEN PORTS SECTION -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">DISCOVERED OPEN PORTS</div>
+        <div class="ports-list" id="drawerPortsList">
+          <div class="empty-state-sm">No port scan data loaded. Click "Scan Ports" below.</div>
         </div>
-    </div>
+      </div>
 
-    <!-- Application Script -->
-    <script src="/app.js"></script>
+      <!-- LATENCY HISTORY CHART SECTION -->
+      <div class="drawer-section">
+        <div class="drawer-section-title">LATENCY HISTORY</div>
+        <div class="history-chart-container" id="drawerHistoryChartContainer">
+          <div class="empty-state-sm" id="drawerHistoryChartText">N/A — No historical data available yet.</div>
+        </div>
+      </div>
+
+      <!-- ACTIONS SECTION -->
+      <div class="drawer-actions">
+        <button class="btn btn-secondary btn-sm" onclick="runCheckOnCurrentDevice()">⚡ Run Check</button>
+        <button class="btn btn-secondary btn-sm" onclick="scanPortsOnCurrentDevice()">🔍 Scan Ports</button>
+        <button class="btn btn-secondary btn-sm" onclick="snmpCheckOnCurrentDevice()">📊 SNMP Check</button>
+        <button class="btn btn-secondary btn-sm" onclick="toggleMonitoringOnCurrentDevice()">⚙ Toggle Monitoring</button>
+        <button class="btn btn-danger btn-sm" onclick="confirmDeleteCurrentDevice()">🗑 Delete Device</button>
+      </div>
+    </div>
+  </aside>
+
+  <!-- REGISTER DEVICE MODAL -->
+  <div class="modal-overlay" id="registerModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h3>Register New Device</h3>
+        <button class="close-btn" onclick="closeRegisterModal()">×</button>
+      </div>
+      <form onsubmit="submitRegisterDevice(event)">
+        <div class="form-group">
+          <label class="form-label">Device Name</label>
+          <input type="text" class="form-input" id="regName" required placeholder="e.g. Core Switch">
+        </div>
+        <div class="form-group">
+          <label class="form-label">IP Address</label>
+          <input type="text" class="form-input mono" id="regIp" required placeholder="192.168.1.1">
+        </div>
+        <div class="form-group">
+          <label class="form-label">Device Type</label>
+          <select class="form-select" id="regType">
+            <option value="ROUTER">Router</option>
+            <option value="SERVER">Server</option>
+            <option value="WORKSTATION">Workstation</option>
+            <option value="SWITCH">Switch</option>
+            <option value="MOBILE">Mobile</option>
+            <option value="UNKNOWN">Unknown</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Vendor (Optional)</label>
+          <input type="text" class="form-input" id="regVendor" placeholder="e.g. Cisco">
+        </div>
+        <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+          <button type="button" class="btn btn-secondary" onclick="closeRegisterModal()">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save & Register</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- DELETE CONFIRMATION MODAL -->
+  <div class="modal-overlay" id="deleteConfirmModal">
+    <div class="modal-content" style="max-width: 440px;">
+      <div class="modal-header">
+        <h3 style="color:var(--danger)">DELETE DEVICE?</h3>
+        <button class="close-btn" onclick="closeDeleteConfirmModal()">×</button>
+      </div>
+      <p style="margin-top:12px; color:var(--text-muted); font-size:14px;">
+        Are you sure you want to remove <strong id="deleteDeviceName" style="color:var(--text-main);">this device</strong> from monitoring?
+      </p>
+      <div style="display:flex; justify-content:flex-end; gap:12px; margin-top:24px;">
+        <button class="btn btn-secondary" onclick="closeDeleteConfirmModal()">Cancel</button>
+        <button class="btn btn-danger" onclick="executeDeleteDevice()">Delete</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- TOAST NOTIFICATION CONTAINER -->
+  <div class="toast-container" id="toastContainer"></div>
+
+  <script src="app.js"></script>
 </body>
 </html>
-

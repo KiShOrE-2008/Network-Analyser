@@ -7,6 +7,7 @@ import com.networkmonitor.dto.DiscoveryRequestDto;
 import com.networkmonitor.dto.DiscoveryResponseDto;
 import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.monitoring.NmapService;
+import com.networkmonitor.service.AutoDiscoveryService;
 import com.networkmonitor.service.DiscoveryService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
@@ -39,6 +40,9 @@ class DiscoveryControllerTest {
 
     @MockitoBean
     private DiscoveryService discoveryService;
+
+    @MockitoBean
+    private AutoDiscoveryService autoDiscoveryService;
 
     @MockitoBean
     private NmapService nmapService;
@@ -118,6 +122,6 @@ class DiscoveryControllerTest {
         mockMvc.perform(get("/api/discovery/nmap/status"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.available", is(true)))
-                .andExpect(jsonPath("$.binary", is("/usr/bin/nmap")));
+                .andExpect(jsonPath("$.binary", is("nmap")));
     }
 }

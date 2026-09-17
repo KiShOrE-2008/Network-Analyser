@@ -2,36 +2,38 @@ services:
   postgres:
     image: postgres:16-alpine
     container_name: network_monitor_postgres
-    restart: always
+    restart: unless-stopped
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-myapp}
-      POSTGRES_USER: ${DB_USERNAME:-kishore}
-      POSTGRES_PASSWORD: ${DB_PASSWORD:-postgres}
+      POSTGRES_USER: ${DB_USERNAME:-networkmonitor}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-networkmonitor}
     ports:
       - "5433:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-kishore} -d ${POSTGRES_DB:-myapp}"]
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME:-networkmonitor} -d ${POSTGRES_DB:-myapp}"]
       interval: 5s
       timeout: 5s
-      retries: 5
+      retries: 10
 
   app:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: network_monitor_app
-    restart: always
+    restart: unless-stopped
+    # Host networking is required on Linux when the application must discover
+    # the real host LAN rather than Docker's private bridge network.
+    network_mode: host
     cap_add:
       - NET_RAW
+      - NET_ADMIN
     depends_on:
       postgres:
         condition: service_healthy
-    ports:
-      - "8080:8080"
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-myapp}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://127.0.0.1:5433/${POSTGRES_DB:-myapp}
       SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-kishore}
       SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update

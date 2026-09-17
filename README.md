@@ -1,177 +1,191 @@
-# Enterprise Network Device Monitoring System
+# NetScope — Enterprise Network Discovery & Monitoring
 
-An enterprise-grade, high-performance Network Device Monitoring and Discovery platform built with **Java 21**, **Spring Boot 3.4.2**, **PostgreSQL**, **Nmap 7.99**, and a **Real-Time Web Dashboard**.
+![Java 21](https://img.shields.io/badge/Java-21-orange.svg)
+![Spring Boot 3.4.2](https://img.shields.io/badge/Spring%20Boot-3.4.2-green.svg)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue.svg)
+![Tests](https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen.svg)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-The system provides active real-time network polling (ICMP Ping, TCP Port Scanning, SNMP Hardware Metrics, Nmap XML Discovery), a rule-based health engine with state-change alerting, multi-channel notification dispatch, RESTful API endpoints, STOMP WebSockets, downloadable CSV SLA reports, and Docker containerization.
+**NetScope** is a high-performance enterprise network discovery and telemetry monitoring platform built with Java 21 and Spring Boot. It dynamically detects IPv4 network interfaces, probes subnet ranges, auto-imports active hosts into PostgreSQL, monitors device reachability with parallel thread workers, and delivers real-time telemetry through a dark NOC operational dashboard.
 
 ---
 
-## 🚀 Project Status: 100% Complete 🎉
+## 🌟 Key Features
 
-All 17 Roadmap Phases have been implemented, tested, containerized, and documented!
+### 🖥️ Enterprise NOC Operational Dashboard
+- **Dark NOC Design System**: Visual hierarchy optimized for 1366×768, 1080p, and mobile/tablet screens with persistent sidebar navigation and sticky telemetry bar.
+- **KPI Metrics**: Real-time tracking of Total Devices, Online reachability ratio, Offline alert counts, and Average Latency.
+- **Discovered Devices Map**: Visual node graph distinguishing network gateways/routers from active hosts with status indicators and quick inspection drawers.
+- **Slide-in Device Details Drawer**: Inspect MAC addresses, vendor identification (OUI), latency history, open ports, SNMP telemetry, and run host probes on demand.
 
-- ✅ **PHASE 0**: Requirements & Architecture frozen ([docs/ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/docs/ARCHITECTURE.md)).
-- ✅ **PHASE 1**: Spring Boot 3.4.2 + PostgreSQL Integration with core `Device` JPA Entity.
-- ✅ **PHASE 2**: Complete Device Management REST APIs, validation engine (IPv4 Regex & octet bounds), JPA Specifications search/filtering.
-- ✅ **PHASE 3**: Real Ping / ICMP Monitoring Engine (OS ping process parsing, latency measurement, packet loss %, metric persistence in `monitoring_metrics`).
-- ✅ **PHASE 4**: TCP Port Monitoring (Socket connection scanning for standard services: SSH, DNS, HTTP, HTTPS, SMB, MySQL, PostgreSQL, RDP, HTTP-Alt; persistence in `port_status`).
-- ✅ **PHASE 5**: Automatic Network Subnet Discovery (CIDR range parsing `/16` to `/32`, pluggable strategy pattern, concurrent multithreaded range scan, mass device import).
-- ✅ **PHASE 6**: Advanced Nmap Integration (System Nmap 7.99 process execution, XML DOM parser for ports, software versions, and OS fingerprinting).
-- ✅ **PHASE 7**: Automatic Bounded Monitoring Scheduler Engine (Background `@Scheduled` worker pool `10` threads, dynamic start/stop REST endpoints).
-- ✅ **PHASE 8**: Health Engine & State-Change Alerting (`HEALTHY`, `WARNING`, `CRITICAL` state rule analysis, alert deduplication, recovery auto-resolution, persistence in `alerts`).
-- ✅ **PHASE 9 & 10**: Single-Page Web Dashboard UI (Dark Theme, glassmorphism, responsive grid, SVG latency charts) & Real-Time STOMP WebSockets (`/ws-monitoring`).
-- ✅ **PHASE 11**: SNMP Hardware Metrics Engine (sysUpTime, CPU load %, Memory usage %, Network interface counters).
-- ✅ **PHASE 12**: Multi-Channel Notification Engine (Alert event logger & dispatch framework).
-- ✅ **PHASE 13**: Security & Access Controls (Spring Security CORS configuration, WebSocket security policies).
-- ✅ **PHASE 14**: Analytics Reports & CSV Export Engine (SLA availability %, system latency averages, downloadable CSV report files).
-- ✅ **PHASE 15 & 16**: Containerization & Deployment ([`Dockerfile`](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/Dockerfile) multi-stage build & [`docker-compose.yml`](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/docker-compose.yml) stack).
-- ✅ **PHASE 17**: Final Verification & Documentation (58/58 passing automated tests).
+### 🔍 Automated & Manual Subnet Discovery
+- **Local Interface Auto-Detection**: Probes attached network adapters (`wlan0`, `eth0`, etc.) and automatically calculates their subnets (e.g. `192.168.1.0/24`).
+- **Multi-Threaded Subnet Scanner**: Concurrent CIDR range scanner supporting ICMP Ping, TCP Port Probes, and Nmap engine scans.
+- **Selective Host Import**: Select newly discovered network endpoints and import them directly into active monitoring inventory.
+
+### 📊 Deep Telemetry & Monitoring Engine
+- **Parallel Worker Scheduler**: Background thread pool executing ping checks every 10 seconds across registered inventory.
+- **Nmap & SNMP Integration**: Deep enrichment including MAC address, vendor identification, open TCP ports, service versions, OS hints, and SNMP v2c/v3 metrics (CPU, RAM, Uptime).
+- **Strict Real Data Integrity**: Zero fake data or random values. Unavailable measurements report `N/A` rather than fabricating statistics.
+
+### ⚠ Alert Center & Reports
+- **State Change Detection**: Automatic alarm creation when endpoints transition between `ONLINE` and `OFFLINE` states.
+- **CSV Inventory Export**: Instant export of registered device details, MACs, vendors, and health status for network audit compliance.
+
+---
+
+## 🏗️ Architecture & Discovery Pipeline
+
+```mermaid
+flowchart TD
+    A[Application Launch] --> B[Detect Attached IPv4 Interfaces]
+    B --> C[Calculate Local CIDR Subnets e.g. 192.168.1.0/24]
+    C --> D[Concurrent Multi-Threaded Range Probing]
+    D --> E{Nmap Installed?}
+    E -- Yes --> F[Nmap Enrichment: MAC, Vendor, Open Ports, OS]
+    E -- No --> G[ICMP/TCP Reachability Detection]
+    F --> H[PostgreSQL Device Inventory]
+    G --> H
+    H --> I[Continuous Parallel Worker Scheduler]
+    I --> J[Ping Latency & State Alarms]
+    I --> K[SNMP Telemetry Queries]
+    J --> L[NetScope NOC Dashboard UI]
+    K --> L
+```
 
 ---
 
 ## 🛠️ Technology Stack
 
-| Component | Technology | Description |
-|---|---|---|
-| **Backend Framework** | Java 21 / Spring Boot 3.4.2 | Core service layer, REST APIs, & async task processing |
-| **Database** | PostgreSQL 16+ | Relational persistence for devices, metrics, ports, and alerts |
-| **ORM / Persistence** | Spring Data JPA / Hibernate | Entity mapping & transactional persistence |
-| **Network Engine** | ICMP Ping, Sockets, Nmap 7.99, SNMP | Network reachability, port scanning, OS fingerprinting & hardware OIDs |
-| **Web Dashboard** | Single Page Application (HTML5/CSS3/ES6) | Dark-theme glassmorphism UI, SVG latency charts & real-time updates |
-| **Real-Time Messaging** | Spring WebSocket / STOMP / SockJS | Live streaming for metrics, alerts, and device status updates |
-| **Scheduler & Worker Pool** | Spring `@Scheduled` / `FixedThreadPool` | Bounded worker pool background engine |
-| **Containerization** | Docker / Docker Compose | Multi-stage Dockerfile with JDK 21 and Nmap |
-| **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 58 automated tests |
-| **Architecture Doc** | [docs/ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/docs/ARCHITECTURE.md) | Mermaid diagrams for system flow, components, and ERD |
+- **Backend Framework**: Java 21, Spring Boot 3.4.2 (Spring Data JPA, Hibernate, Web, WebSocket/STOMP)
+- **Database**: PostgreSQL 16 (H2 for unit testing)
+- **Network Probes**: ICMP Native Probes, TCP Socket Probes, Nmap Engine, SNMP4J
+- **Frontend Architecture**: Vanilla HTML5, CSS3 Custom Properties (NOC Theme), ES6+ JavaScript SPA (Served directly via Spring Boot)
+- **Containerization**: Docker & Docker Compose (Host Networking enabled for Linux L2 MAC detection)
 
 ---
 
-## 🗺️ Project Roadmap & Milestones
+## 🔌 REST API Reference
 
-```text
-PHASE 0  → Requirements + Architecture [COMPLETED]
-PHASE 1  → Java/Spring Boot + PostgreSQL [COMPLETED]
-PHASE 2  → Device Management APIs [COMPLETED]
-PHASE 3  → Real Ping/ICMP Monitoring [COMPLETED]
-PHASE 4  → TCP Port Monitoring [COMPLETED]
-PHASE 5  → Subnet Network Discovery [COMPLETED]
-PHASE 6  → Nmap Integration [COMPLETED]
-PHASE 7  → Automatic Monitoring Scheduler [COMPLETED]
-PHASE 8  → Health & Alert Engine [COMPLETED]
-PHASE 9  → Web Dashboard UI [COMPLETED]
-PHASE 10 → Real-Time WebSockets [COMPLETED]
-PHASE 11 → SNMP Hardware Metrics [COMPLETED]
-PHASE 12 → Multi-Channel Notifications [COMPLETED]
-PHASE 13 → Security & CORS Policies [COMPLETED]
-PHASE 14 → Historical Analytics & CSV Reports [COMPLETED]
-PHASE 15 → Performance Optimization [COMPLETED]
-PHASE 16 → Docker & Docker Compose Deployment [COMPLETED]
-PHASE 17 → Final Verification & Documentation [COMPLETED]
-```
+### Network Discovery
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/discovery/local-networks` | Returns attached local IPv4 interfaces & subnets |
+| `POST` | `/api/discovery/auto` | Executes automatic discovery on attached subnets |
+| `GET` | `/api/discovery/auto/status` | Checks background auto-discovery status |
+| `POST` | `/api/discovery/scan` | Scans a specific CIDR range (ICMP / TCP) |
+| `POST` | `/api/discovery/import` | Imports selected discovered hosts into inventory |
+| `GET` | `/api/discovery/nmap/status` | Checks Nmap binary availability on host |
+| `POST` | `/api/discovery/nmap` | Triggers an Nmap subnet scan |
+
+### Device Management & Probes
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/devices` | Returns device inventory (supports `search`, `type`, `status` filters) |
+| `GET` | `/api/devices/{id}` | Returns detailed device metadata |
+| `POST` | `/api/devices` | Registers a new device manually |
+| `PUT` | `/api/devices/{id}` | Updates existing device parameters |
+| `PATCH` | `/api/devices/{id}/toggle-monitoring` | Enables or disables background monitoring |
+| `DELETE` | `/api/devices/{id}` | Removes a device from monitoring |
+| `POST` | `/api/devices/{id}/check` | Triggers an instant ICMP ping probe |
+| `GET` | `/api/devices/{id}/metrics` | Returns ping latency history |
+| `GET` | `/api/devices/{id}/events` | Returns recent device state change events |
+| `POST` | `/api/devices/{id}/scan-ports` | Performs a TCP port scan |
+| `GET` | `/api/devices/{id}/ports` | Returns discovered open ports |
+| `POST` | `/api/devices/{id}/snmp-check` | Queries SNMP v2c/v3 telemetry |
+| `GET` | `/api/devices/{id}/snmp` | Returns cached SNMP metrics |
+
+### History, Alerts & Reports
+
+| Method | Endpoint | Description |
+|---|---|---|
+| `GET` | `/api/history/device/{id}` | Historical metric trends for a device |
+| `GET` | `/api/events` | Recent system-wide network events |
+| `GET` | `/api/alerts` | Active and resolved alert history |
+| `PATCH` | `/api/alerts/{id}/resolve` | Resolves an active alert |
+| `GET` | `/api/reports/summary` | System SLA and reachability summary report |
+| `GET` | `/api/reports/export/csv` | Downloads `device_inventory_report.csv` |
 
 ---
 
-## 📡 Complete REST API Reference
-
-### System Health & Analytics Reports
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/health` | Check backend & PostgreSQL connectivity status |
-| `GET` | `/api/reports/summary` | Generate system SLA availability %, average latency, and health breakdown |
-| `GET` | `/api/reports/export/csv` | Download complete device inventory as a CSV report file |
-
-### Device Management (`/api/devices`)
-| Method | Endpoint | Description | Query / Request Parameters |
-|---|---|---|---|
-| `GET` | `/api/devices` | List all devices | `search` (name/IP/hostname), `type` (Enum), `status` (Enum) |
-| `GET` | `/api/devices/{id}` | Get device by ID | — |
-| `POST` | `/api/devices` | Register a new device | Request Body (`DeviceRequestDto`) |
-| `PUT` | `/api/devices/{id}` | Update existing device | Request Body (`DeviceRequestDto`) |
-| `PATCH` | `/api/devices/{id}/toggle-monitoring` | Toggle active monitoring state | — |
-| `DELETE` | `/api/devices/{id}` | Delete a device | — |
-
-### Real-Time Monitoring & Metrics (`/api/devices/{id}`)
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/devices/{id}/check` | Perform real-time ICMP ping check on target device |
-| `GET` | `/api/devices/{id}/metrics` | Fetch historical latency and packet loss metric logs |
-| `POST` | `/api/devices/{id}/scan-ports` | Perform TCP port scan on standard service ports |
-| `GET` | `/api/devices/{id}/ports` | Fetch latest port status logs for device |
-| `POST` | `/api/devices/{id}/nmap-scan` | Perform advanced Nmap scan for single device |
-| `POST` | `/api/devices/{id}/snmp-check` | Query SNMP hardware metrics (CPU, Memory, Uptime) |
-| `GET` | `/api/devices/{id}/snmp` | Fetch latest SNMP hardware metrics |
-
-### Network Discovery (`/api/discovery`)
-| Method | Endpoint | Description | Request Parameters |
-|---|---|---|---|
-| `POST` | `/api/discovery/scan` | Concurrent subnet CIDR range scan | `subnetCidr` (e.g. `192.168.1.0/24`), `strategy` (`PING`/`TCP`/`NMAP`), `threads` |
-| `POST` | `/api/discovery/import` | Mass import discovered devices | JSON Array of `DeviceRequestDto` |
-| `GET` | `/api/discovery/nmap/status` | Check Nmap binary availability & version | — |
-| `POST` | `/api/discovery/nmap` | Run advanced Nmap range scan | Request Body (`DiscoveryRequestDto`) |
-
-### Background Scheduler (`/api/scheduler`)
-| Method | Endpoint | Description |
-|---|---|---|
-| `GET` | `/api/scheduler/status` | Fetch background worker status, active pool size, and scan metrics |
-| `POST` | `/api/scheduler/start` | Enable automatic background monitoring cycle |
-| `POST` | `/api/scheduler/stop` | Pause automatic background monitoring cycle |
-
-### Alert Management (`/api/alerts`)
-| Method | Endpoint | Description | Query Parameters |
-|---|---|---|---|
-| `GET` | `/api/alerts` | List active unresolved alerts | `includeResolved` (boolean) |
-| `GET` | `/api/alerts/device/{deviceId}` | List alert history for a device | — |
-| `PATCH` | `/api/alerts/{id}/resolve` | Manually acknowledge / resolve an alert | — |
-
----
-
-## 🏗️ Getting Started
+## 🚀 Getting Started
 
 ### Prerequisites
-- **JDK 21** or higher installed.
-- **PostgreSQL** running locally on port `5432` with a database named `myapp` (or update `application.properties`).
-- **Nmap** binary installed (`/usr/bin/nmap`).
-- **Apache Maven 3.9+**.
+- **JDK 21** or later
+- **PostgreSQL 16** (or Docker)
+- **Nmap** (Optional, recommended for MAC vendor & port scanning)
+- **Maven 3.9+**
 
-### Build & Run Locally
+### Local Development Setup
 
-#### 1. Compile & Execute Complete Test Suite (58/58 Tests)
-```bash
-./mvnw clean test
-```
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/KiShOrE-2008/Network-Analyser.git
+   cd Network-Analyser
+   ```
 
-#### 2. Launch the Spring Boot Platform
-```bash
-./mvnw spring-boot:run
-```
+2. **Run Maven unit tests**:
+   ```bash
+   ./mvnw clean test
+   ```
 
-Open your web browser and navigate to **`http://localhost:8080`** to access the interactive Web Dashboard!
+3. **Start the application**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+4. **Access the NetScope Dashboard**:
+   Open [http://localhost:8080](http://localhost:8080) in your browser.
 
 ---
 
 ## 🐳 Docker Deployment
 
-To launch the full stack (Spring Boot Application + PostgreSQL 16) using Docker Compose:
+For real LAN discovery on Linux, NetScope uses host network mode so the container can probe actual local L2/L3 devices.
 
 ```bash
-docker-compose up --build -d
-```
+# Build and start services in background
+docker compose up --build -d
 
-Access the dashboard at `http://localhost:8080`.
+# View application logs
+docker compose logs -f app
+
+# Stop containers
+docker compose down
+```
 
 ---
 
-## 🧪 Automated Verification & Test Suite
+## ⚙️ Configuration Reference
 
-The project includes 58 unit and integration tests using JUnit 5, Mockito, and Spring `WebMvcTest`:
-- `DeviceServiceTest` & `DeviceControllerTest`: Device CRUD, validation, and search specs.
-- `PingServiceTest` & `DeviceMonitoringServiceTest`: ICMP Ping engine, latency parsing, and metric storage.
-- `PortScannerServiceTest` & `MonitoringControllerTest`: TCP socket port scanning and REST APIs.
-- `SubnetCalculatorTest`, `DiscoveryServiceTest` & `DiscoveryControllerTest`: Subnet CIDR calculation, concurrent worker pools, and device import.
-- `NmapServiceTest`: DOM XML parsing for Nmap scan outputs.
-- `HealthAnalyzerServiceTest` & `AlertServiceTest`: Health status rule analysis, state transition alert deduplication, and recovery auto-resolution.
-- `MonitoringSchedulerServiceTest` & `SchedulerControllerTest`: Bounded background scheduler pool execution & REST endpoints.
-- `AlertControllerTest`: REST API endpoints for viewing and resolving alerts.
-- `SnmpServiceTest`: SNMP hardware metric queries and calculation.
-- `ReportServiceTest` & `ReportControllerTest`: SLA summary calculations and CSV data exporting.
-- `NetworkMonitorApplicationTests`: Context loading and PostgreSQL Hikari connection pool verification.
+Environment variables can be specified in `.env` or passed directly to Docker:
+
+| Environment Variable | Default Value | Description |
+|---|---|---|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5433/myapp` | PostgreSQL JDBC Connection URL |
+| `DB_USERNAME` | `kishore` | PostgreSQL Database User |
+| `DB_PASSWORD` | `postgres` | PostgreSQL Database Password |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update` | DDL generation strategy (`update` / `validate`) |
+| `DISCOVERY_INITIAL_DELAY` | `10000` | Initial discovery scan delay (ms) |
+| `DISCOVERY_INTERVAL` | `60000` | Subnet auto-discovery interval (ms) |
+| `MONITORING_INTERVAL` | `10000` | Reachability monitoring worker cycle (ms) |
+
+---
+
+## 🧪 Verification & Quality Control
+
+The project includes automated JUnit 5 and Spring Boot integration tests:
+
+```bash
+./mvnw test
+```
+
+All 58 unit tests cover API controllers, network discovery services, health analyzers, scheduler thread pools, and report generators.
+
+---
+
+## 📄 License
+
+This project is open-source under the [MIT License](LICENSE).

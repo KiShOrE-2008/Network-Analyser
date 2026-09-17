@@ -1,0 +1,3 @@
+package com.networkmonitor.controller;
+import com.networkmonitor.dto.DeviceHistoryDto;import com.networkmonitor.service.HistoryService;import org.springframework.http.ResponseEntity;import org.springframework.web.bind.annotation.*;
+@RestController @RequestMapping("/api/history") public class HistoryController{private final HistoryService service;public HistoryController(HistoryService s){service=s;}@GetMapping("/device/{id}")public ResponseEntity<DeviceHistoryDto> device(@PathVariable Long id,@RequestParam(defaultValue="100")int limit){return ResponseEntity.ok(service.deviceHistory(id,Math.min(Math.max(limit,1),1000)));}}

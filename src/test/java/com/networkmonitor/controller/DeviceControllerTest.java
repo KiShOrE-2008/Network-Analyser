@@ -112,6 +112,7 @@ class DeviceControllerTest {
     @DisplayName("POST /api/devices should return 400 BAD REQUEST when invalid IP address format")
     void createDevice_InvalidIp_ShouldReturn400() throws Exception {
         requestDto.setIpAddress("invalid_ip");
+        when(deviceService.createDevice(any())).thenThrow(new IllegalArgumentException("Invalid IP address: invalid_ip"));
 
         mockMvc.perform(post("/api/devices")
                         .contentType(MediaType.APPLICATION_JSON)

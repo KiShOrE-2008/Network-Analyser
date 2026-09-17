@@ -17,171 +17,112 @@ import java.util.List;
 
 @Service
 public class NmapService {
-
     public boolean isNmapAvailable() {
         try {
             Process process = new ProcessBuilder("nmap", "--version").start();
-            int exitCode = process.waitFor();
-            return exitCode == 0;
+            return process.waitFor() == 0;
         } catch (Exception e) {
             return false;
         }
     }
 
     public NmapScanResultDto scanTarget(String target, String scanProfile) {
-        long startTime = System.currentTimeMillis();
+        long start = System.currentTimeMillis();
         NmapScanResultDto result = new NmapScanResultDto();
         result.setTarget(target);
         result.setScanProfile(scanProfile != null ? scanProfile : "FAST_PORT");
-
         boolean available = isNmapAvailable();
         result.setNmapAvailable(available);
-
-        if (!available) {
-            result.setExecutionTimeMs(System.currentTimeMillis() - startTime);
-            return result;
-        }
+        if (!available) { result.setExecutionTimeMs(System.currentTimeMillis() - start); return result; }
 
         List<String> command = new ArrayList<>();
         command.add("nmap");
-
         if ("HOST_DISCOVERY".equalsIgnoreCase(scanProfile)) {
             command.add("-sn");
         } else if ("DETAILED".equalsIgnoreCase(scanProfile)) {
             command.add("-F");
             command.add("-sV");
         } else {
-            // Default FAST_PORT scan
             command.add("-F");
         }
-
-        command.add("-oX");
-        command.add("-");
-        command.add(target);
+        command.add("-oX"); command.add("-"); command.add(target);
 
         try {
-            ProcessBuilder pb = new ProcessBuilder(command);
-            Process process = pb.start();
-
-            InputStream is = process.getInputStream();
-            byte[] xmlBytes = is.readAllBytes();
+            Process process = new ProcessBuilder(command).start();
+            byte[] xmlBytes = process.getInputStream().readAllBytes();
             process.waitFor();
-
-            if (xmlBytes.length > 0) {
-                parseNmapXml(new ByteArrayInputStream(xmlBytes), result);
-            }
+            if (xmlBytes.length > 0) parseNmapXml(new ByteArrayInputStream(xmlBytes), result);
         } catch (Exception e) {
             result.setNmapAvailable(false);
         }
-
-        result.setExecutionTimeMs(System.currentTimeMillis() - startTime);
+        result.setExecutionTimeMs(System.currentTimeMillis() - start);
         return result;
     }
 
     public void parseNmapXml(InputStream xmlInputStream, NmapScanResultDto resultDto) {
         try {
             DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
-            // Disable external DTD resolution and entities for XXE security while supporting Nmap DOCTYPE header
             factory.setFeature("http://apache.org/xml/features/disallow-doctype-decl", false);
             factory.setFeature("http://apache.org/xml/features/nonvalidating/load-external-dtd", false);
             factory.setFeature("http://xml.org/sax/features/external-general-entities", false);
             factory.setFeature("http://xml.org/sax/features/external-parameter-entities", false);
             factory.setXIncludeAware(false);
             factory.setExpandEntityReferences(false);
-
             DocumentBuilder builder = factory.newDocumentBuilder();
             Document doc = builder.parse(xmlInputStream);
             doc.getDocumentElement().normalize();
 
             NodeList hostList = doc.getElementsByTagName("host");
-            int totalHosts = hostList.getLength();
             int hostsUp = 0;
-
             for (int i = 0; i < hostList.getLength(); i++) {
-                Element hostElem = (Element) hostList.item(i);
-
-                // Status
+                Element host = (Element) hostList.item(i);
                 String state = "unknown";
-                NodeList statusList = hostElem.getElementsByTagName("status");
-                if (statusList.getLength() > 0) {
-                    Element statusElem = (Element) statusList.item(0);
-                    state = statusElem.getAttribute("state");
-                }
+                NodeList status = host.getElementsByTagName("status");
+                if (status.getLength() > 0) state = ((Element) status.item(0)).getAttribute("state");
+                if ("up".equalsIgnoreCase(state)) hostsUp++;
 
-                if ("up".equalsIgnoreCase(state)) {
-                    hostsUp++;
+                String ip = null, mac = null, vendor = null;
+                NodeList addresses = host.getElementsByTagName("address");
+                for (int j = 0; j < addresses.getLength(); j++) {
+                    Element a = (Element) addresses.item(j);
+                    String type = a.getAttribute("addrtype");
+                    if ("ipv4".equalsIgnoreCase(type)) ip = a.getAttribute("addr");
+                    else if ("mac".equalsIgnoreCase(type)) { mac = a.getAttribute("addr"); vendor = a.getAttribute("vendor"); }
+                    else if (ip == null) ip = a.getAttribute("addr");
                 }
+                if (ip == null || ip.isBlank()) continue;
 
-                // IP Address
-                String ipAddress = null;
-                NodeList addrList = hostElem.getElementsByTagName("address");
-                for (int j = 0; j < addrList.getLength(); j++) {
-                    Element addrElem = (Element) addrList.item(j);
-                    if ("ipv4".equalsIgnoreCase(addrElem.getAttribute("addrtype")) || ipAddress == null) {
-                        ipAddress = addrElem.getAttribute("addr");
+                String hostname = ip;
+                NodeList names = host.getElementsByTagName("hostname");
+                if (names.getLength() > 0) hostname = ((Element) names.item(0)).getAttribute("name");
+                String os = "Unknown OS";
+                NodeList osMatches = host.getElementsByTagName("osmatch");
+                if (osMatches.getLength() > 0) os = ((Element) osMatches.item(0)).getAttribute("name");
+
+                NmapHostResultDto dto = new NmapHostResultDto(ip, state, hostname, os);
+                dto.setMacAddress(mac); dto.setVendor(vendor);
+
+                NodeList ports = host.getElementsByTagName("port");
+                for (int k = 0; k < ports.getLength(); k++) {
+                    Element p = (Element) ports.item(k);
+                    NodeList states = p.getElementsByTagName("state");
+                    String portState = states.getLength() > 0 ? ((Element) states.item(0)).getAttribute("state") : "closed";
+                    if (!"open".equalsIgnoreCase(portState)) continue;
+                    int port = Integer.parseInt(p.getAttribute("portid"));
+                    String protocol = p.getAttribute("protocol"), service = "unknown", product = "", version = "";
+                    NodeList services = p.getElementsByTagName("service");
+                    if (services.getLength() > 0) {
+                        Element s = (Element) services.item(0);
+                        service = s.getAttribute("name"); product = s.getAttribute("product"); version = s.getAttribute("version");
                     }
+                    dto.getOpenPorts().add(new NmapPortResultDto(port, protocol, portState, service, product, version));
                 }
-
-                if (ipAddress == null) continue;
-
-                // Hostname
-                String hostname = ipAddress;
-                NodeList hostnameList = hostElem.getElementsByTagName("hostname");
-                if (hostnameList.getLength() > 0) {
-                    Element hNameElem = (Element) hostnameList.item(0);
-                    hostname = hNameElem.getAttribute("name");
-                }
-
-                // OS Match
-                String osMatch = "Unknown OS";
-                NodeList osMatchList = hostElem.getElementsByTagName("osmatch");
-                if (osMatchList.getLength() > 0) {
-                    Element osElem = (Element) osMatchList.item(0);
-                    osMatch = osElem.getAttribute("name");
-                }
-
-                NmapHostResultDto hostDto = new NmapHostResultDto(ipAddress, state, hostname, osMatch);
-
-                // Open Ports
-                NodeList portList = hostElem.getElementsByTagName("port");
-                for (int k = 0; k < portList.getLength(); k++) {
-                    Element portElem = (Element) portList.item(k);
-                    String protocol = portElem.getAttribute("protocol");
-                    int portId = Integer.parseInt(portElem.getAttribute("portid"));
-
-                    String portState = "closed";
-                    NodeList pStateList = portElem.getElementsByTagName("state");
-                    if (pStateList.getLength() > 0) {
-                        portState = ((Element) pStateList.item(0)).getAttribute("state");
-                    }
-
-                    if ("open".equalsIgnoreCase(portState)) {
-                        String serviceName = "unknown";
-                        String product = "";
-                        String version = "";
-
-                        NodeList serviceList = portElem.getElementsByTagName("service");
-                        if (serviceList.getLength() > 0) {
-                            Element serviceElem = (Element) serviceList.item(0);
-                            serviceName = serviceElem.getAttribute("name");
-                            product = serviceElem.getAttribute("product");
-                            version = serviceElem.getAttribute("version");
-                        }
-
-                        hostDto.getOpenPorts().add(new NmapPortResultDto(
-                                portId, protocol, portState, serviceName, product, version
-                        ));
-                    }
-                }
-
-                resultDto.getHosts().add(hostDto);
+                resultDto.getHosts().add(dto);
             }
-
-            resultDto.setTotalHostsScanned(totalHosts);
+            resultDto.setTotalHostsScanned(hostList.getLength());
             resultDto.setHostsUpCount(hostsUp);
-
-        } catch (Exception e) {
-            // Keep gracefully empty list on parse error
+        } catch (Exception ignored) {
+            // Keep ping discovery usable when Nmap is unavailable or output cannot be parsed.
         }
     }
 }
