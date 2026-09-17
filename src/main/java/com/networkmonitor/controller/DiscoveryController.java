@@ -1,11 +1,14 @@
 package com.networkmonitor.controller;
 
+import com.networkmonitor.dto.AutoDiscoveryResponseDto;
 import com.networkmonitor.dto.DeviceRequestDto;
 import com.networkmonitor.dto.DeviceResponseDto;
 import com.networkmonitor.dto.DiscoveryRequestDto;
 import com.networkmonitor.dto.DiscoveryResponseDto;
+import com.networkmonitor.dto.LocalNetworkDto;
 import com.networkmonitor.dto.NmapScanResultDto;
 import com.networkmonitor.monitoring.NmapService;
+import com.networkmonitor.service.AutoDiscoveryService;
 import com.networkmonitor.service.DiscoveryService;
 import jakarta.validation.Valid;
 import org.springframework.http.HttpStatus;
@@ -21,11 +24,36 @@ import java.util.Map;
 public class DiscoveryController {
 
     private final DiscoveryService discoveryService;
+    private final AutoDiscoveryService autoDiscoveryService;
     private final NmapService nmapService;
 
-    public DiscoveryController(DiscoveryService discoveryService, NmapService nmapService) {
+    public DiscoveryController(
+            DiscoveryService discoveryService,
+            AutoDiscoveryService autoDiscoveryService,
+            NmapService nmapService) {
         this.discoveryService = discoveryService;
+        this.autoDiscoveryService = autoDiscoveryService;
         this.nmapService = nmapService;
+    }
+
+    /** Detect the IPv4 networks currently attached to this server. */
+    @GetMapping("/local-networks")
+    public ResponseEntity<List<LocalNetworkDto>> getLocalNetworks() {
+        return ResponseEntity.ok(autoDiscoveryService.getLocalNetworks());
+    }
+
+    /** Scan all suitable local networks and automatically import newly discovered devices. */
+    @PostMapping("/auto")
+    public ResponseEntity<AutoDiscoveryResponseDto> autoDiscover() {
+        return ResponseEntity.ok(autoDiscoveryService.discoverAndImport());
+    }
+
+    @GetMapping("/auto/status")
+    public ResponseEntity<Map<String, Object>> getAutoDiscoveryStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("running", autoDiscoveryService.isScanRunning());
+        status.put("schedule", "automatic");
+        return ResponseEntity.ok(status);
     }
 
     @PostMapping("/scan")
@@ -45,8 +73,8 @@ public class DiscoveryController {
         Map<String, Object> status = new HashMap<>();
         boolean available = nmapService.isNmapAvailable();
         status.put("available", available);
-        status.put("binary", available ? "/usr/bin/nmap" : "Not Found");
-        status.put("version", available ? "Nmap 7.99" : "None");
+        status.put("binary", available ? "nmap" : "Not Found");
+        status.put("version", available ? "detected" : "None");
         return ResponseEntity.ok(status);
     }
 
@@ -56,4 +84,3 @@ public class DiscoveryController {
         return ResponseEntity.ok(response);
     }
 }
-
