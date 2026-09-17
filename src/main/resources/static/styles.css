@@ -43,6 +43,11 @@
   font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+*:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+
 body {
   background-color: var(--bg-main);
   color: var(--text-main);
@@ -124,6 +129,7 @@ h1, h2, h3, h4, .brand-title, .kpi-value, .drawer-title {
   flex-direction: column;
   gap: 4px;
   flex: 1;
+  overflow-y: auto;
 }
 
 .nav-item {
@@ -271,6 +277,12 @@ h1, h2, h3, h4, .brand-title, .kpi-value, .drawer-title {
   letter-spacing: 0.5px;
 }
 
+.sys-badge.offline {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--offline);
+  border-color: rgba(239, 68, 68, 0.25);
+}
+
 .last-updated {
   font-size: 12px;
   color: var(--text-subtle);
@@ -282,6 +294,22 @@ h1, h2, h3, h4, .brand-title, .kpi-value, .drawer-title {
   flex: 1;
   max-width: 1600px;
   width: 100%;
+}
+
+/* CONNECTION LOST BANNER */
+.connection-lost-banner {
+  background: rgba(239, 68, 68, 0.15);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  border-radius: var(--radius-md);
+  padding: 14px 20px;
+  margin-bottom: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  font-size: 13px;
+  color: #fca5a5;
+  animation: fadeIn 0.2s ease-out;
 }
 
 .view-panel {
