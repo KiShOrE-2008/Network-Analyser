@@ -107,8 +107,8 @@ function toggleConnectionLostBanner(show) {
       topText.textContent = 'CONNECTION LOST';
       topBadge.className = 'sys-badge offline';
     } else {
-      topText.textContent = 'SYSTEM OPERATIONAL';
-      topBadge.className = 'sys-badge';
+      topText.textContent = (state.health && state.health.status === 'UP') ? 'SYSTEM OPERATIONAL' : 'SYSTEM DEGRADED';
+      topBadge.className = (state.health && state.health.status === 'UP') ? 'sys-badge' : 'sys-badge offline';
     }
   }
 }
@@ -176,19 +176,13 @@ async function refreshData() {
 
 // Update Status Badges
 function updateSystemStatusBadge() {
-  if (!state.backendConnected) return;
-
-  const onlineCount = state.devices.filter(d => d.status === 'ONLINE').length;
-  const total = state.devices.length;
-  const isHealthy = total === 0 || (onlineCount / total) >= 0.7;
-
-  // Sidebar dynamic network info
+  // Sidebar dynamic network info (no hard-coded fallback)
   const sbCidr = document.getElementById('sbNetworkCidr');
   if (sbCidr) {
     if (state.localNetworks.length > 0) {
       sbCidr.textContent = state.localNetworks[0].networkCidr || state.localNetworks[0].ipAddress;
     } else {
-      sbCidr.textContent = '192.168.1.0/24';
+      sbCidr.textContent = 'Detecting...';
     }
   }
 
@@ -200,11 +194,20 @@ function updateSystemStatusBadge() {
     alertBadge.style.display = activeAlertsCount > 0 ? 'inline-block' : 'none';
   }
 
+  // Topbar System Operational badge (strictly based on backend /api/health and connection)
   const topText = document.getElementById('topSysText');
   const topBadge = document.getElementById('topSysBadge');
   if (topText && topBadge) {
-    topText.textContent = isHealthy ? 'SYSTEM OPERATIONAL' : 'DEGRADED PERFORMANCE';
-    topBadge.className = isHealthy ? 'sys-badge' : 'sys-badge offline';
+    if (!state.backendConnected) {
+      topText.textContent = 'CONNECTION LOST';
+      topBadge.className = 'sys-badge offline';
+    } else if (state.health && state.health.status === 'UP') {
+      topText.textContent = 'SYSTEM OPERATIONAL';
+      topBadge.className = 'sys-badge';
+    } else {
+      topText.textContent = 'SYSTEM DEGRADED';
+      topBadge.className = 'sys-badge offline';
+    }
   }
 }
 
@@ -328,7 +331,7 @@ function renderDevices() {
     const typeClass = `type-${(d.deviceType || 'UNKNOWN').toLowerCase()}`;
     const typePill = `<span class="type-pill ${typeClass}">${d.deviceType || 'UNKNOWN'}</span>`;
     const latency = typeof d._latency === 'number' ? `${d._latency.toFixed(1)} ms` : 'N/A';
-    const lastSeen = d.lastSeen ? formatTimeAgo(d.lastSeen) : 'N/A';
+    const lastSeen = d.lastSeenAt ? formatTimeAgo(d.lastSeenAt) : 'N/A';
 
     return `
       <tr onclick="openDeviceDetails(${d.id})">
@@ -371,18 +374,30 @@ async function openDeviceDetails(deviceId) {
   const badgeContainer = document.getElementById('drawerStatusBadgeContainer');
   badgeContainer.innerHTML = `<span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}"><span class="status-dot ${isOnline ? 'online' : 'offline'}"></span> ${device.status || 'UNKNOWN'}</span>`;
 
-  // Identity Section
+  // Identity Section (using osClue)
   document.getElementById('drawerHostname').textContent = device.hostname || 'N/A';
   document.getElementById('drawerMac').textContent = device.macAddress || 'N/A';
   document.getElementById('drawerVendor').textContent = device.vendor || 'N/A';
   document.getElementById('drawerType').textContent = device.deviceType || 'N/A';
-  document.getElementById('drawerOs').textContent = device.osHint || 'N/A';
+  document.getElementById('drawerOs').textContent = device.osClue || 'N/A';
 
-  // Connectivity Section
+  // Connectivity Section (using lastSeenAt)
   const latVal = typeof device._latency === 'number' ? `${device._latency.toFixed(1)} ms` : 'N/A';
   document.getElementById('drawerLatency').textContent = latVal;
-  document.getElementById('drawerPacketLoss').textContent = typeof device.packetLoss === 'number' ? `${device.packetLoss}%` : 'N/A';
-  document.getElementById('drawerLastSeen').textContent = device.lastSeen ? formatTimeAgo(device.lastSeen) : 'N/A';
+  document.getElementById('drawerLastSeen').textContent = device.lastSeenAt ? formatTimeAgo(device.lastSeenAt) : 'N/A';
+
+  // Fetch Device Metrics asynchronously for real packet loss calculation
+  fetchJson(`/devices/${deviceId}/metrics`).then(metrics => {
+    if (metrics && metrics.length > 0) {
+      const latest = metrics[0];
+      const loss = typeof latest.packetLoss === 'number' ? `${latest.packetLoss}%` : 'N/A';
+      document.getElementById('drawerPacketLoss').textContent = loss;
+    } else {
+      document.getElementById('drawerPacketLoss').textContent = 'N/A';
+    }
+  }).catch(() => {
+    document.getElementById('drawerPacketLoss').textContent = 'N/A';
+  });
 
   // Fetch Open Ports asynchronously
   fetchJson(`/devices/${deviceId}/ports`).then(ports => {
@@ -398,9 +413,9 @@ async function openDeviceDetails(deviceId) {
 
   // Fetch SNMP Telemetry asynchronously
   fetchJson(`/devices/${deviceId}/snmp`).then(snmp => {
-    document.getElementById('drawerCpu').textContent = snmp && typeof snmp.cpuUsage === 'number' ? `${snmp.cpuUsage}%` : 'N/A';
-    document.getElementById('drawerMemory').textContent = snmp && typeof snmp.memoryUsage === 'number' ? `${snmp.memoryUsage}%` : 'N/A';
-    document.getElementById('drawerUptime').textContent = snmp && snmp.sysUptime ? snmp.sysUptime : 'N/A';
+    document.getElementById('drawerCpu').textContent = snmp && typeof snmp.cpuUsagePercent === 'number' ? `${snmp.cpuUsagePercent}%` : 'N/A';
+    document.getElementById('drawerMemory').textContent = snmp && typeof snmp.memoryUsagePercent === 'number' ? `${snmp.memoryUsagePercent}%` : 'N/A';
+    document.getElementById('drawerUptime').textContent = snmp && typeof snmp.sysUptimeSeconds === 'number' ? `${snmp.sysUptimeSeconds} sec` : 'N/A';
   }).catch(() => {
     document.getElementById('drawerCpu').textContent = 'N/A';
     document.getElementById('drawerMemory').textContent = 'N/A';
@@ -812,9 +827,9 @@ function renderSettingsDiagnostics() {
   const h = state.health || { status: 'UP', database: 'Connected', nmapAvailable: true, version: '1.0.0-SNAPSHOT' };
 
   elem.innerHTML = `
-    <div class="info-pair"><span class="info-key">Backend Status</span><span class="info-val ${state.backendConnected ? 'green-text' : 'red-text'}">${state.backendConnected ? '● CONNECTED (UP)' : '○ DISCONNECTED'}</span></div>
+    <div class="info-pair"><span class="info-key">Backend Status</span><span class="info-val ${state.backendConnected && h.status === 'UP' ? 'green-text' : 'red-text'}">${state.backendConnected && h.status === 'UP' ? '● CONNECTED (UP)' : '○ DISCONNECTED / DEGRADED'}</span></div>
     <div class="info-pair"><span class="info-key">API Base URL</span><span class="info-val mono">http://localhost:8080/api</span></div>
-    <div class="info-pair"><span class="info-key">Database Engine</span><span class="info-val">${h.database || 'Connected'}</span></div>
+    <div class="info-pair"><span class="info-key">Database Engine Connection</span><span class="info-val ${h.database === 'Connected' ? 'green-text' : 'red-text'}">${h.database || 'Disconnected'}</span></div>
     <div class="info-pair"><span class="info-key">Nmap Scanner Binary</span><span class="info-val ${h.nmapAvailable ? 'green-text' : ''}">${h.nmapAvailable ? '● Available' : '○ Not Found'}</span></div>
     <div class="info-pair"><span class="info-key">SNMP Engine</span><span class="info-val green-text">● Available (SNMP4J)</span></div>
     <div class="info-pair"><span class="info-key">Platform Version</span><span class="info-val mono">${h.version || '1.0.0-SNAPSHOT'}</span></div>

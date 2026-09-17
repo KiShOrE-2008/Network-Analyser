@@ -32,10 +32,10 @@ public class SnmpService {
     public SnmpMetricDto querySnmpMetrics(Long deviceId, String ipAddress, String community) {
         String comm = (community != null && !community.isBlank()) ? community : "public";
 
-        long sysUptimeSeconds = 0L;
-        double cpuUsagePercent = 0.0;
-        double memoryUsagePercent = 0.0;
-        int interfacesCount = 0;
+        Long sysUptimeSeconds = null;
+        Double cpuUsagePercent = null;
+        Double memoryUsagePercent = null;
+        Integer interfacesCount = null;
         boolean querySuccessful = false;
 
         Snmp snmp = null;
@@ -108,6 +108,6 @@ public class SnmpService {
     }
 
     private SnmpMetricDto createFallbackDto(Long deviceId, String ipAddress, String community) {
-        return new SnmpMetricDto(deviceId, ipAddress, 0L, 0.0, 0.0, 0, community);
+        return new SnmpMetricDto(deviceId, ipAddress, null, null, null, null, community);
     }
 }

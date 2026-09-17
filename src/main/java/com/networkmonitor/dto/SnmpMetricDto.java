@@ -6,17 +6,17 @@ public class SnmpMetricDto {
 
     private Long deviceId;
     private String deviceIp;
-    private long sysUptimeSeconds;
-    private double cpuUsagePercent;
-    private double memoryUsagePercent;
-    private int networkInterfacesCount;
+    private Long sysUptimeSeconds;
+    private Double cpuUsagePercent;
+    private Double memoryUsagePercent;
+    private Integer networkInterfacesCount;
     private String community;
     private LocalDateTime checkedAt;
 
     public SnmpMetricDto() {
     }
 
-    public SnmpMetricDto(Long deviceId, String deviceIp, long sysUptimeSeconds, double cpuUsagePercent, double memoryUsagePercent, int networkInterfacesCount, String community) {
+    public SnmpMetricDto(Long deviceId, String deviceIp, Long sysUptimeSeconds, Double cpuUsagePercent, Double memoryUsagePercent, Integer networkInterfacesCount, String community) {
         this.deviceId = deviceId;
         this.deviceIp = deviceIp;
         this.sysUptimeSeconds = sysUptimeSeconds;
@@ -43,35 +43,35 @@ public class SnmpMetricDto {
         this.deviceIp = deviceIp;
     }
 
-    public long getSysUptimeSeconds() {
+    public Long getSysUptimeSeconds() {
         return sysUptimeSeconds;
     }
 
-    public void setSysUptimeSeconds(long sysUptimeSeconds) {
+    public void setSysUptimeSeconds(Long sysUptimeSeconds) {
         this.sysUptimeSeconds = sysUptimeSeconds;
     }
 
-    public double getCpuUsagePercent() {
+    public Double getCpuUsagePercent() {
         return cpuUsagePercent;
     }
 
-    public void setCpuUsagePercent(double cpuUsagePercent) {
+    public void setCpuUsagePercent(Double cpuUsagePercent) {
         this.cpuUsagePercent = cpuUsagePercent;
     }
 
-    public double getMemoryUsagePercent() {
+    public Double getMemoryUsagePercent() {
         return memoryUsagePercent;
     }
 
-    public void setMemoryUsagePercent(double memoryUsagePercent) {
+    public void setMemoryUsagePercent(Double memoryUsagePercent) {
         this.memoryUsagePercent = memoryUsagePercent;
     }
 
-    public int getNetworkInterfacesCount() {
+    public Integer getNetworkInterfacesCount() {
         return networkInterfacesCount;
     }
 
-    public void setNetworkInterfacesCount(int networkInterfacesCount) {
+    public void setNetworkInterfacesCount(Integer networkInterfacesCount) {
         this.networkInterfacesCount = networkInterfacesCount;
     }
 
