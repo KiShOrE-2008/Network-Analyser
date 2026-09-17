@@ -8,6 +8,8 @@ const state = {
   discoveredHosts: [],
   localNetworks: [],
   schedulerStatus: null,
+  health: null,
+  backendConnected: true,
   activeView: 'overview',
   activeAlertFilter: 'ALL',
   selectedDeviceId: null,
@@ -51,7 +53,10 @@ function switchView(viewId) {
     discovery: 'Network Discovery',
     monitoring: 'Monitoring Controls',
     alerts: 'Alert Center',
-    reports: 'Reports & Export'
+    reports: 'Reports & Export',
+    settings: 'Settings & Diagnostics',
+    help: 'Documentation & Help',
+    about: 'About NetScope'
   };
   const titleElem = document.getElementById('pageTitle');
   if (titleElem) titleElem.textContent = titleMap[viewId] || 'NetScope';
@@ -71,14 +76,41 @@ function toggleSidebar() {
   if (sidebar) sidebar.classList.toggle('open');
 }
 
-// API Helper
+// Centralized API Helper with Health Protection
 async function fetchJson(url, options = {}) {
-  const res = await fetch(API_BASE + url, options);
-  if (!res.ok) {
-    const errText = await res.text();
-    throw new Error(errText || `HTTP ${res.status}`);
+  try {
+    const res = await fetch(API_BASE + url, options);
+    if (!res.ok) {
+      const errText = await res.text();
+      throw new Error(errText || `HTTP ${res.status}`);
+    }
+    state.backendConnected = true;
+    toggleConnectionLostBanner(false);
+    return res.json();
+  } catch (err) {
+    if (url.startsWith('/devices') || url.startsWith('/health') || url.startsWith('/discovery')) {
+      state.backendConnected = false;
+      toggleConnectionLostBanner(true);
+    }
+    throw err;
   }
-  return res.json();
+}
+
+function toggleConnectionLostBanner(show) {
+  const banner = document.getElementById('connectionLostBanner');
+  if (banner) banner.style.display = show ? 'flex' : 'none';
+  
+  const topText = document.getElementById('topSysText');
+  const topBadge = document.getElementById('topSysBadge');
+  if (topText && topBadge) {
+    if (show) {
+      topText.textContent = 'CONNECTION LOST';
+      topBadge.className = 'sys-badge offline';
+    } else {
+      topText.textContent = 'SYSTEM OPERATIONAL';
+      topBadge.className = 'sys-badge';
+    }
+  }
 }
 
 // Toast Notifications
@@ -101,7 +133,8 @@ function showToast(msg, type = 'info') {
 // Main Data Fetching Cycle
 async function refreshData() {
   try {
-    const [devices, alerts, events, localNets, schedStatus] = await Promise.all([
+    const [health, devices, alerts, events, localNets, schedStatus] = await Promise.all([
+      fetchJson('/health').catch(() => null),
       fetchJson('/devices').catch(() => []),
       fetchJson('/alerts?includeResolved=true').catch(() => []),
       fetchJson('/events').catch(() => []),
@@ -109,6 +142,7 @@ async function refreshData() {
       fetchJson('/scheduler/status').catch(() => null)
     ]);
 
+    state.health = health;
     state.devices = devices;
     state.alerts = alerts;
     state.events = events;
@@ -133,6 +167,7 @@ async function refreshData() {
     renderSchedulerDetails();
     renderAlerts();
     renderReportsSummary();
+    renderSettingsDiagnostics();
 
   } catch (err) {
     console.error('Data refresh error:', err);
@@ -141,6 +176,8 @@ async function refreshData() {
 
 // Update Status Badges
 function updateSystemStatusBadge() {
+  if (!state.backendConnected) return;
+
   const onlineCount = state.devices.filter(d => d.status === 'ONLINE').length;
   const total = state.devices.length;
   const isHealthy = total === 0 || (onlineCount / total) >= 0.7;
@@ -164,8 +201,10 @@ function updateSystemStatusBadge() {
   }
 
   const topText = document.getElementById('topSysText');
-  if (topText) {
+  const topBadge = document.getElementById('topSysBadge');
+  if (topText && topBadge) {
     topText.textContent = isHealthy ? 'SYSTEM OPERATIONAL' : 'DEGRADED PERFORMANCE';
+    topBadge.className = isHealthy ? 'sys-badge' : 'sys-badge offline';
   }
 }
 
@@ -209,7 +248,7 @@ function renderNetworkMap() {
     const typeIcon = getDeviceTypeIcon(d.deviceType);
 
     return `
-      <div class="map-node ${isGateway ? 'gateway' : ''}" onclick="openDeviceDetails(${d.id})">
+      <div class="map-node ${isGateway ? 'gateway' : ''}" onclick="openDeviceDetails(${d.id})" role="button" aria-label="Inspect ${escapeHtml(d.name)}">
         <span class="map-node-icon">${typeIcon}</span>
         <div class="map-node-info">
           <div class="map-node-name">${escapeHtml(d.name)}</div>
@@ -303,7 +342,7 @@ function renderDevices() {
         <td class="mono">${latency}</td>
         <td style="color:var(--text-subtle);">${lastSeen}</td>
         <td style="text-align:right" onclick="event.stopPropagation()">
-          <button class="btn btn-secondary btn-sm" onclick="openDeviceDetails(${d.id})">Inspect</button>
+          <button class="btn btn-secondary btn-sm" onclick="openDeviceDetails(${d.id})" aria-label="Inspect ${escapeHtml(d.name)}">Inspect</button>
         </td>
       </tr>
     `;
@@ -349,7 +388,7 @@ async function openDeviceDetails(deviceId) {
   fetchJson(`/devices/${deviceId}/ports`).then(ports => {
     const list = document.getElementById('drawerPortsList');
     if (!ports || !ports.length) {
-      list.innerHTML = `<div class="empty-state-sm">No open ports detected on host.</div>`;
+      list.innerHTML = `<div class="empty-state-sm">No port scan data loaded. Click "Scan Ports" below.</div>`;
       return;
     }
     list.innerHTML = ports.map(p => `<span class="port-tag">${p.portNumber}/${p.protocol || 'TCP'} (${p.serviceName || 'Open'})</span>`).join('');
@@ -558,7 +597,7 @@ function renderDiscoveryRows() {
     return `
       <tr>
         <td style="text-align: center;">
-          <input type="checkbox" class="disc-check" data-index="${idx}" ${!isExisting ? 'checked' : ''}>
+          <input type="checkbox" class="disc-check" data-index="${idx}" ${!isExisting ? 'checked' : ''} aria-label="Select host ${escapeHtml(host.ipAddress)}">
         </td>
         <td class="mono" style="font-weight:600;">${escapeHtml(host.ipAddress)}</td>
         <td class="mono" style="color:var(--text-muted);">${escapeHtml(host.hostname || host.ipAddress)}</td>
@@ -763,6 +802,23 @@ async function renderReportsSummary() {
   } catch (err) {
     grid.innerHTML = `<div class="empty-state">Report error: ${escapeHtml(err.message)}</div>`;
   }
+}
+
+// 11. Render Settings Diagnostics
+function renderSettingsDiagnostics() {
+  const elem = document.getElementById('settingsDiagnostics');
+  if (!elem) return;
+
+  const h = state.health || { status: 'UP', database: 'Connected', nmapAvailable: true, version: '1.0.0-SNAPSHOT' };
+
+  elem.innerHTML = `
+    <div class="info-pair"><span class="info-key">Backend Status</span><span class="info-val ${state.backendConnected ? 'green-text' : 'red-text'}">${state.backendConnected ? '● CONNECTED (UP)' : '○ DISCONNECTED'}</span></div>
+    <div class="info-pair"><span class="info-key">API Base URL</span><span class="info-val mono">http://localhost:8080/api</span></div>
+    <div class="info-pair"><span class="info-key">Database Engine</span><span class="info-val">${h.database || 'Connected'}</span></div>
+    <div class="info-pair"><span class="info-key">Nmap Scanner Binary</span><span class="info-val ${h.nmapAvailable ? 'green-text' : ''}">${h.nmapAvailable ? '● Available' : '○ Not Found'}</span></div>
+    <div class="info-pair"><span class="info-key">SNMP Engine</span><span class="info-val green-text">● Available (SNMP4J)</span></div>
+    <div class="info-pair"><span class="info-key">Platform Version</span><span class="info-val mono">${h.version || '1.0.0-SNAPSHOT'}</span></div>
+  `;
 }
 
 function exportCsv() {

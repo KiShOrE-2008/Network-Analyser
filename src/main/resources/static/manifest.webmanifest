@@ -1,0 +1,17 @@
+{
+  "name": "NetScope — Network Discovery & Monitoring",
+  "short_name": "NetScope",
+  "description": "Enterprise network discovery and telemetry monitoring console",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#090d16",
+  "theme_color": "#090d16",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "512x512",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

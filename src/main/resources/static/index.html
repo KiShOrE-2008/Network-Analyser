@@ -4,6 +4,10 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>NetScope — Network Discovery & Monitoring</title>
+  <meta name="description" content="NetScope enterprise network discovery and telemetry monitoring console.">
+  <meta name="theme-color" content="#090d16">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="manifest" href="manifest.webmanifest">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -23,30 +27,42 @@
       </div>
 
       <nav class="sidebar-nav">
-        <button class="nav-item active" data-view="overview">
+        <button class="nav-item active" data-view="overview" aria-label="Overview Dashboard">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
           <span>Overview</span>
         </button>
-        <button class="nav-item" data-view="devices">
+        <button class="nav-item" data-view="devices" aria-label="Device Inventory">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
           <span>Devices</span>
         </button>
-        <button class="nav-item" data-view="discovery">
+        <button class="nav-item" data-view="discovery" aria-label="Network Discovery Engine">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
           <span>Discovery</span>
         </button>
-        <button class="nav-item" data-view="monitoring">
+        <button class="nav-item" data-view="monitoring" aria-label="Monitoring Scheduler">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
           <span>Monitoring</span>
         </button>
-        <button class="nav-item" data-view="alerts">
+        <button class="nav-item" data-view="alerts" aria-label="Alert Center">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
           <span>Alerts</span>
           <span class="nav-badge" id="navAlertBadge" style="display:none;">0</span>
         </button>
-        <button class="nav-item" data-view="reports">
+        <button class="nav-item" data-view="reports" aria-label="Reports & CSV Export">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"></path><polyline points="14 2 14 8 20 8"></polyline><line x1="16" y1="13" x2="8" y2="13"></line><line x1="16" y1="17" x2="8" y2="17"></line><polyline points="10 9 9 9 8 9"></polyline></svg>
           <span>Reports</span>
+        </button>
+        <button class="nav-item" data-view="settings" aria-label="Application Settings">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+          <span>Settings</span>
+        </button>
+        <button class="nav-item" data-view="help" aria-label="Documentation and Help">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"></path><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+          <span>Documentation</span>
+        </button>
+        <button class="nav-item" data-view="about" aria-label="About NetScope">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>About</span>
         </button>
       </nav>
 
@@ -69,7 +85,7 @@
       <!-- TOP BAR -->
       <header class="app-topbar">
         <div class="topbar-left">
-          <button class="mobile-toggle" onclick="toggleSidebar()">☰</button>
+          <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Navigation Menu">☰</button>
           <h1 class="topbar-title" id="pageTitle">Overview</h1>
         </div>
 
@@ -79,17 +95,24 @@
             <span id="topSysText">SYSTEM OPERATIONAL</span>
           </div>
           <span class="last-updated" id="lastUpdatedText">Last updated: --:--:--</span>
-          <button class="btn btn-secondary btn-sm" onclick="refreshData()" title="Refresh Telemetry">
+          <button class="btn btn-secondary btn-sm" onclick="refreshData()" title="Refresh Telemetry" aria-label="Refresh Telemetry">
             ↻ Refresh
           </button>
-          <button class="btn btn-primary btn-sm" onclick="openRegisterModal()">
+          <button class="btn btn-primary btn-sm" onclick="openRegisterModal()" aria-label="Register Device">
             + Register Device
           </button>
         </div>
       </header>
 
-      <!-- VIEW PANELS -->
+      <!-- CONTENT BODY -->
       <main class="content-body">
+
+        <!-- PERSISTENT BACKEND UNREACHABLE BANNER -->
+        <div class="connection-lost-banner" id="connectionLostBanner" style="display:none;">
+          <span class="status-dot red"></span>
+          <span><strong>CONNECTION LOST:</strong> Unable to communicate with NetScope backend API (`http://localhost:8080`). The monitoring service may be unavailable.</span>
+          <button class="btn btn-secondary btn-sm" onclick="refreshData()">Retry Connection</button>
+        </div>
 
         <!-- 1. OVERVIEW VIEW -->
         <section class="view-panel active" id="view-overview">
@@ -190,10 +213,10 @@
           <div class="toolbar">
             <div class="search-box">
               <span class="search-icon">🔍</span>
-              <input type="text" class="search-input" id="deviceSearch" placeholder="Search devices by IP, name, hostname, MAC, vendor..." oninput="renderDevices()">
+              <input type="text" class="search-input" id="deviceSearch" placeholder="Search devices by IP, name, hostname, MAC, vendor..." oninput="renderDevices()" aria-label="Search devices">
             </div>
             <div class="filter-group">
-              <select class="form-select" id="deviceTypeFilter" onchange="renderDevices()">
+              <select class="form-select" id="deviceTypeFilter" onchange="renderDevices()" aria-label="Filter by Device Type">
                 <option value="ALL">All Types</option>
                 <option value="ROUTER">Router</option>
                 <option value="SERVER">Server</option>
@@ -202,7 +225,7 @@
                 <option value="MOBILE">Mobile</option>
                 <option value="UNKNOWN">Unknown</option>
               </select>
-              <select class="form-select" id="deviceStatusFilter" onchange="renderDevices()">
+              <select class="form-select" id="deviceStatusFilter" onchange="renderDevices()" aria-label="Filter by Status">
                 <option value="ALL">All Status</option>
                 <option value="ONLINE">Online</option>
                 <option value="OFFLINE">Offline</option>
@@ -308,7 +331,7 @@
                 <thead>
                   <tr>
                     <th style="width: 40px; text-align: center;">
-                      <input type="checkbox" id="selectAllDiscovered" onchange="toggleSelectAllDiscovered(this)">
+                      <input type="checkbox" id="selectAllDiscovered" onchange="toggleSelectAllDiscovered(this)" aria-label="Select all discovered hosts">
                     </th>
                     <th>IP ADDRESS</th>
                     <th>HOSTNAME</th>
@@ -392,6 +415,113 @@
           </div>
         </section>
 
+        <!-- 7. SETTINGS VIEW -->
+        <section class="view-panel" id="view-settings">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">SETTINGS & CONFIGURATION</h2>
+              <p class="section-desc">Application preferences, polling intervals, and backend telemetry health.</p>
+            </div>
+          </div>
+
+          <div class="grid-layout-2">
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">GENERAL PREFERENCES</h3>
+              </div>
+              <div class="drawer-section" style="border:none; padding:0;">
+                <div class="info-pair" style="margin-bottom:16px;">
+                  <div>
+                    <strong style="display:block;">Dashboard Theme</strong>
+                    <span class="card-sub">Dark NOC operational color scheme</span>
+                  </div>
+                  <span class="badge badge-new">● Dark (Default)</span>
+                </div>
+                <div class="info-pair" style="margin-bottom:16px;">
+                  <div>
+                    <strong style="display:block;">Auto Data Refresh</strong>
+                    <span class="card-sub">Polls backend telemetry every 10 seconds</span>
+                  </div>
+                  <span class="badge badge-online">● ACTIVE (10s)</span>
+                </div>
+                <div class="info-pair">
+                  <div>
+                    <strong style="display:block;">Strict Real Data Integrity</strong>
+                    <span class="card-sub">Zero fake metrics policy — returns N/A for missing data</span>
+                  </div>
+                  <span class="badge badge-online">● ENFORCED</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="card">
+              <div class="card-header">
+                <h3 class="card-title">SYSTEM DIAGNOSTICS</h3>
+              </div>
+              <div class="drawer-section" style="border:none; padding:0;" id="settingsDiagnostics">
+                <div class="empty-state">Querying `/api/health` diagnostics...</div>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <!-- 8. DOCUMENTATION VIEW -->
+        <section class="view-panel" id="view-help">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">DOCUMENTATION & HELP</h2>
+              <p class="section-desc">Feature guide, discovery mechanics, and technical specifications.</p>
+            </div>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px;">🚀 Getting Started Workflow</h3>
+            <ol style="margin-left: 20px; line-height: 1.8; color: var(--text-muted); font-size: 14px;">
+              <li><strong>Interface Detection:</strong> Upon launch, NetScope queries attached IPv4 network adapters (`wlan0`, `eth0`).</li>
+              <li><strong>CIDR Calculation:</strong> The system automatically derives local subnet ranges (e.g. `192.168.1.0/24`).</li>
+              <li><strong>Subnet Range Scanning:</strong> Active hosts are discovered using multi-threaded ICMP Ping or Nmap probes.</li>
+              <li><strong>Device Onboarding:</strong> Discovered endpoints are imported into PostgreSQL inventory.</li>
+              <li><strong>Continuous Telemetry:</strong> Background worker pool polls endpoints every 10 seconds for latency and reachability state changes.</li>
+            </ol>
+          </div>
+
+          <div class="card">
+            <h3 class="card-title" style="margin-bottom: 12px;">🛡️ Technical Honesty & Limitations</h3>
+            <p style="line-height: 1.6; color: var(--text-muted); font-size: 14px; margin-bottom: 12px;">
+              NetScope adheres strictly to real network data integrity. Remote endpoints on an IPv4 network do not reveal CPU usage, RAM consumption, or OS details unless explicitly configured to expose them via supported protocols like SNMP or Nmap.
+            </p>
+            <p style="line-height: 1.6; color: var(--text-subtle); font-size: 13px;">
+              When telemetry is unexposed by a target host, NetScope reports the value as <strong>N/A</strong> rather than fabricating fake percentages or sample data.
+            </p>
+          </div>
+        </section>
+
+        <!-- 9. ABOUT VIEW -->
+        <section class="view-panel" id="view-about">
+          <div class="section-hero">
+            <div>
+              <h2 class="section-title">ABOUT NETSCOPE</h2>
+              <p class="section-desc">Enterprise Network Discovery & Telemetry Platform.</p>
+            </div>
+          </div>
+
+          <div class="card" style="max-width: 600px;">
+            <div style="display:flex; align-items:center; gap:16px; margin-bottom:20px;">
+              <div class="brand-logo" style="width:54px; height:54px; font-size:26px;">N</div>
+              <div>
+                <h3 style="font-size:22px; font-weight:800;">NetScope Platform</h3>
+                <div class="card-sub">Version 1.0.0-SNAPSHOT (Enterprise Edition)</div>
+              </div>
+            </div>
+            <div class="drawer-section" style="border:none; padding:0;">
+              <div class="info-pair"><span class="info-key">Backend Runtime</span><span class="info-val">Java 21 / Spring Boot 3.4.2</span></div>
+              <div class="info-pair"><span class="info-key">Database Engine</span><span class="info-val">PostgreSQL 16</span></div>
+              <div class="info-pair"><span class="info-key">Discovery Engine</span><span class="info-val">ICMP, TCP, Nmap, SNMP4J</span></div>
+              <div class="info-pair"><span class="info-key">License</span><span class="info-val">MIT Open Source License</span></div>
+            </div>
+          </div>
+        </section>
+
       </main>
     </div>
   </div>
@@ -404,7 +534,7 @@
         <div class="drawer-title" id="drawerDeviceName">Device Details</div>
         <div class="drawer-sub mono" id="drawerIpAddress">--.--.--.--</div>
       </div>
-      <button class="close-btn" onclick="closeDeviceDetails()">×</button>
+      <button class="close-btn" onclick="closeDeviceDetails()" aria-label="Close Drawer">×</button>
     </div>
 
     <div class="drawer-body">
@@ -471,7 +601,7 @@
     <div class="modal-content">
       <div class="modal-header">
         <h3>Register New Device</h3>
-        <button class="close-btn" onclick="closeRegisterModal()">×</button>
+        <button class="close-btn" onclick="closeRegisterModal()" aria-label="Close Modal">×</button>
       </div>
       <form onsubmit="submitRegisterDevice(event)">
         <div class="form-group">
@@ -510,7 +640,7 @@
     <div class="modal-content" style="max-width: 440px;">
       <div class="modal-header">
         <h3 style="color:var(--danger)">DELETE DEVICE?</h3>
-        <button class="close-btn" onclick="closeDeleteConfirmModal()">×</button>
+        <button class="close-btn" onclick="closeDeleteConfirmModal()" aria-label="Close Modal">×</button>
       </div>
       <p style="margin-top:12px; color:var(--text-muted); font-size:14px;">
         Are you sure you want to remove <strong id="deleteDeviceName" style="color:var(--text-main);">this device</strong> from monitoring?
