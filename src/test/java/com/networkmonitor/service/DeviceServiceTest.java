@@ -141,6 +141,7 @@ class DeviceServiceTest {
 
     @Test
     @DisplayName("getAllDevices should pass Specification and return matching list")
+    @SuppressWarnings("unchecked")
     void getAllDevices_Success() {
         when(deviceRepository.findAll(any(Specification.class))).thenReturn(List.of(sampleDevice));
 

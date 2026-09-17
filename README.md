@@ -10,7 +10,7 @@ The system provides active real-time network polling (ICMP Ping, TCP Port Scanni
 
 All 17 Roadmap Phases have been implemented, tested, containerized, and documented!
 
-- ✅ **PHASE 0**: Requirements & Architecture frozen ([ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md)).
+- ✅ **PHASE 0**: Requirements & Architecture frozen ([docs/ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/docs/ARCHITECTURE.md)).
 - ✅ **PHASE 1**: Spring Boot 3.4.2 + PostgreSQL Integration with core `Device` JPA Entity.
 - ✅ **PHASE 2**: Complete Device Management REST APIs, validation engine (IPv4 Regex & octet bounds), JPA Specifications search/filtering.
 - ✅ **PHASE 3**: Real Ping / ICMP Monitoring Engine (OS ping process parsing, latency measurement, packet loss %, metric persistence in `monitoring_metrics`).
@@ -42,7 +42,7 @@ All 17 Roadmap Phases have been implemented, tested, containerized, and document
 | **Scheduler & Worker Pool** | Spring `@Scheduled` / `FixedThreadPool` | Bounded worker pool background engine |
 | **Containerization** | Docker / Docker Compose | Multi-stage Dockerfile with JDK 21 and Nmap |
 | **Build & Testing** | Maven 3.9+ / JUnit 5 / Mockito | Package management & 58 automated tests |
-| **Architecture Doc** | [ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/ARCHITECTURE.md) | Mermaid diagrams for system flow, components, and ERD |
+| **Architecture Doc** | [docs/ARCHITECTURE.md](file:///run/media/kishore/Data/Project/3/java/NetworkDeviceMonitoringDemo/docs/ARCHITECTURE.md) | Mermaid diagrams for system flow, components, and ERD |
 
 ---
 
@@ -137,12 +137,12 @@ PHASE 17 → Final Verification & Documentation [COMPLETED]
 
 #### 1. Compile & Execute Complete Test Suite (58/58 Tests)
 ```bash
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn clean package
+./mvnw clean test
 ```
 
 #### 2. Launch the Spring Boot Platform
 ```bash
-JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64 mvn spring-boot:run
+./mvnw spring-boot:run
 ```
 
 Open your web browser and navigate to **`http://localhost:8080`** to access the interactive Web Dashboard!

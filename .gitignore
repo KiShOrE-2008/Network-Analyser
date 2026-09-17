@@ -21,7 +21,6 @@ hs_err_pid*
 target/
 out/
 build/
-.mvn/
 
 # IDE files
 .idea/

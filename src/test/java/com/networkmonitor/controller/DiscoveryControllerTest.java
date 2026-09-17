@@ -5,7 +5,6 @@ import com.networkmonitor.dto.DeviceRequestDto;
 import com.networkmonitor.dto.DeviceResponseDto;
 import com.networkmonitor.dto.DiscoveryRequestDto;
 import com.networkmonitor.dto.DiscoveryResponseDto;
-import com.networkmonitor.dto.NmapScanResultDto;
 import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.monitoring.NmapService;
 import com.networkmonitor.service.DiscoveryService;
