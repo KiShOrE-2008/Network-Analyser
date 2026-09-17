@@ -1,29 +1,3 @@
 package com.networkmonitor.dto;
-
-import com.networkmonitor.entity.Device;
-import com.networkmonitor.entity.DeviceStatus;
-import com.networkmonitor.entity.DeviceType;
-import com.networkmonitor.entity.HealthStatus;
-import java.time.LocalDateTime;
-
-public class DeviceResponseDto {
-    private Long id; private String name; private String ipAddress; private String hostname; private DeviceType deviceType;
-    private String vendor; private String model; private String macAddress; private String osClue;
-    private DeviceStatus status; private HealthStatus healthStatus; private boolean monitoringEnabled; private Integer scanInterval;
-    private LocalDateTime createdAt, updatedAt, lastSeenAt;
-    public DeviceResponseDto() {}
-    public static DeviceResponseDto fromEntity(Device d){
-        DeviceResponseDto x=new DeviceResponseDto(); x.id=d.getId(); x.name=d.getName(); x.ipAddress=d.getIpAddress(); x.hostname=d.getHostname();
-        x.deviceType=d.getDeviceType(); x.vendor=d.getVendor(); x.model=d.getModel(); x.macAddress=d.getMacAddress(); x.osClue=d.getOsClue();
-        x.status=d.getStatus(); x.healthStatus=d.getHealthStatus(); x.monitoringEnabled=d.isMonitoringEnabled(); x.scanInterval=d.getScanInterval();
-        x.createdAt=d.getCreatedAt(); x.updatedAt=d.getUpdatedAt(); x.lastSeenAt=d.getLastSeenAt(); return x;
-    }
-    public Long getId(){return id;} public void setId(Long v){id=v;} public String getName(){return name;} public void setName(String v){name=v;}
-    public String getIpAddress(){return ipAddress;} public void setIpAddress(String v){ipAddress=v;} public String getHostname(){return hostname;} public void setHostname(String v){hostname=v;}
-    public DeviceType getDeviceType(){return deviceType;} public void setDeviceType(DeviceType v){deviceType=v;} public String getVendor(){return vendor;} public void setVendor(String v){vendor=v;}
-    public String getModel(){return model;} public void setModel(String v){model=v;} public String getMacAddress(){return macAddress;} public void setMacAddress(String v){macAddress=v;}
-    public String getOsClue(){return osClue;} public void setOsClue(String v){osClue=v;} public DeviceStatus getStatus(){return status;} public void setStatus(DeviceStatus v){status=v;}
-    public HealthStatus getHealthStatus(){return healthStatus;} public void setHealthStatus(HealthStatus v){healthStatus=v;} public boolean isMonitoringEnabled(){return monitoringEnabled;} public void setMonitoringEnabled(boolean v){monitoringEnabled=v;}
-    public Integer getScanInterval(){return scanInterval;} public void setScanInterval(Integer v){scanInterval=v;} public LocalDateTime getCreatedAt(){return createdAt;} public void setCreatedAt(LocalDateTime v){createdAt=v;}
-    public LocalDateTime getUpdatedAt(){return updatedAt;} public void setUpdatedAt(LocalDateTime v){updatedAt=v;} public LocalDateTime getLastSeenAt(){return lastSeenAt;} public void setLastSeenAt(LocalDateTime v){lastSeenAt=v;}
-}
+import com.networkmonitor.entity.Device;import com.networkmonitor.entity.DeviceStatus;import com.networkmonitor.entity.DeviceType;import com.networkmonitor.entity.HealthStatus;import java.time.LocalDateTime;
+public class DeviceResponseDto{private Long id;private String name,ipAddress,hostname,vendor,model,macAddress,osClue;private DeviceType deviceType;private DeviceStatus status;private HealthStatus healthStatus;private boolean monitoringEnabled;private Integer scanInterval;private LocalDateTime createdAt,updatedAt,lastSeenAt;public static DeviceResponseDto fromEntity(Device d){DeviceResponseDto x=new DeviceResponseDto();x.id=d.getId();x.name=d.getName();x.ipAddress=d.getIpAddress();x.hostname=d.getHostname();x.deviceType=d.getDeviceType();x.vendor=d.getVendor();x.model=d.getModel();x.macAddress=d.getMacAddress();x.osClue=d.getOsClue();x.status=d.getStatus();x.healthStatus=d.getHealthStatus();x.monitoringEnabled=d.isMonitoringEnabled();x.scanInterval=d.getScanInterval();x.createdAt=d.getCreatedAt();x.updatedAt=d.getUpdatedAt();x.lastSeenAt=d.getLastSeenAt();return x;}public Long getId(){return id;}public void setId(Long v){id=v;}public String getName(){return name;}public void setName(String v){name=v;}public String getIpAddress(){return ipAddress;}public void setIpAddress(String v){ipAddress=v;}public String getHostname(){return hostname;}public void setHostname(String v){hostname=v;}public DeviceType getDeviceType(){return deviceType;}public void setDeviceType(DeviceType v){deviceType=v;}public String getVendor(){return vendor;}public void setVendor(String v){vendor=v;}public String getModel(){return model;}public void setModel(String v){model=v;}public String getMacAddress(){return macAddress;}public void setMacAddress(String v){macAddress=v;}public String getOsClue(){return osClue;}public void setOsClue(String v){osClue=v;}public DeviceStatus getStatus(){return status;}public void setStatus(DeviceStatus v){status=v;}public HealthStatus getHealthStatus(){return healthStatus;}public void setHealthStatus(HealthStatus v){healthStatus=v;}public boolean isMonitoringEnabled(){return monitoringEnabled;}public void setMonitoringEnabled(boolean v){monitoringEnabled=v;}public Integer getScanInterval(){return scanInterval;}public void setScanInterval(Integer v){scanInterval=v;}public LocalDateTime getCreatedAt(){return createdAt;}public void setCreatedAt(LocalDateTime v){createdAt=v;}public LocalDateTime getUpdatedAt(){return updatedAt;}public void setUpdatedAt(LocalDateTime v){updatedAt=v;}public LocalDateTime getLastSeenAt(){return lastSeenAt;}public void setLastSeenAt(LocalDateTime v){lastSeenAt=v;}}
