@@ -34,8 +34,8 @@ services:
         condition: service_healthy
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://127.0.0.1:5433/${POSTGRES_DB:-myapp}
-      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-networkmonitor}
-      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-networkmonitor}
+      SPRING_DATASOURCE_USERNAME: ${DB_USERNAME:-kishore}
+      SPRING_DATASOURCE_PASSWORD: ${DB_PASSWORD:-postgres}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
 
 volumes:

@@ -1,12 +1,17 @@
-// NetOps Command — Dashboard Client JS
+// NetScope — Network Discovery & Monitoring Client Application
 const API_BASE = '/api';
 
 const state = {
   devices: [],
   alerts: [],
+  events: [],
   discoveredHosts: [],
-  scheduler: { active: true, workerPoolSize: 10 },
-  activeView: 'overview'
+  localNetworks: [],
+  schedulerStatus: null,
+  activeView: 'overview',
+  activeAlertFilter: 'ALL',
+  selectedDeviceId: null,
+  deviceToDeleteId: null
 };
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -16,13 +21,15 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initApp() {
   setupNavigation();
   await refreshData();
-  setInterval(refreshData, 12000);
+  // Poll data every 10 seconds without full UI reset
+  setInterval(refreshData, 10000);
 }
 
+// Navigation & View Switching
 function setupNavigation() {
-  const btns = document.querySelectorAll('.nav-btn');
-  btns.forEach(btn => {
-    btn.addEventListener('click', (e) => {
+  const items = document.querySelectorAll('.nav-item');
+  items.forEach(item => {
+    item.addEventListener('click', (e) => {
       const view = e.currentTarget.dataset.view;
       switchView(view);
     });
@@ -31,17 +38,40 @@ function setupNavigation() {
 
 function switchView(viewId) {
   state.activeView = viewId;
-  document.querySelectorAll('.nav-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.view === viewId);
+  
+  // Update nav highlight
+  document.querySelectorAll('.nav-item').forEach(item => {
+    item.classList.toggle('active', item.dataset.view === viewId);
   });
 
-  document.querySelectorAll('.view-content').forEach(view => {
-    const isTarget = view.id === `view-${viewId}`;
-    view.classList.toggle('active', isTarget);
+  // Update topbar title
+  const titleMap = {
+    overview: 'Overview',
+    devices: 'Device Inventory',
+    discovery: 'Network Discovery',
+    monitoring: 'Monitoring Controls',
+    alerts: 'Alert Center',
+    reports: 'Reports & Export'
+  };
+  const titleElem = document.getElementById('pageTitle');
+  if (titleElem) titleElem.textContent = titleMap[viewId] || 'NetScope';
+
+  // Toggle view panels
+  document.querySelectorAll('.view-panel').forEach(panel => {
+    panel.classList.toggle('active', panel.id === `view-${viewId}`);
   });
+
+  // Mobile sidebar close on navigation
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.remove('open');
 }
 
-// API Utilities
+function toggleSidebar() {
+  const sidebar = document.getElementById('sidebar');
+  if (sidebar) sidebar.classList.toggle('open');
+}
+
+// API Helper
 async function fetchJson(url, options = {}) {
   const res = await fetch(API_BASE + url, options);
   if (!res.ok) {
@@ -51,112 +81,397 @@ async function fetchJson(url, options = {}) {
   return res.json();
 }
 
-function showToast(msg) {
-  const toast = document.getElementById('toast');
-  if (!toast) return;
+// Toast Notifications
+function showToast(msg, type = 'info') {
+  const container = document.getElementById('toastContainer');
+  if (!container) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'toast';
   toast.textContent = msg;
-  toast.classList.add('show');
-  setTimeout(() => toast.classList.remove('show'), 3500);
+  if (type === 'error') toast.style.borderLeftColor = 'var(--offline)';
+  if (type === 'success') toast.style.borderLeftColor = 'var(--online)';
+
+  container.appendChild(toast);
+  setTimeout(() => {
+    toast.remove();
+  }, 3500);
 }
 
-// Data Refreshing
+// Main Data Fetching Cycle
 async function refreshData() {
   try {
-    const [devices, alerts] = await Promise.all([
+    const [devices, alerts, events, localNets, schedStatus] = await Promise.all([
       fetchJson('/devices').catch(() => []),
-      fetchJson('/alerts?includeResolved=true').catch(() => [])
+      fetchJson('/alerts?includeResolved=true').catch(() => []),
+      fetchJson('/events').catch(() => []),
+      fetchJson('/discovery/local-networks').catch(() => []),
+      fetchJson('/scheduler/status').catch(() => null)
     ]);
 
     state.devices = devices;
     state.alerts = alerts;
+    state.events = events;
+    state.localNetworks = localNets;
+    state.schedulerStatus = schedStatus;
 
+    // Update timestamp
+    const now = new Date();
+    const timeStr = now.toTimeString().split(' ')[0];
+    const tsElem = document.getElementById('lastUpdatedText');
+    if (tsElem) tsElem.textContent = `Last updated: ${timeStr}`;
+
+    // Update Sidebar & Topbar status
+    updateSystemStatusBadge();
+
+    // Render active view components
     renderKPIs();
-    renderDeviceInventory();
+    renderNetworkMap();
     renderActivityFeed();
-    renderAlertCenter();
+    renderDevices();
+    renderLocalNetworks();
+    renderSchedulerDetails();
+    renderAlerts();
+    renderReportsSummary();
+
   } catch (err) {
     console.error('Data refresh error:', err);
   }
 }
 
-// Render KPI Cards
+// Update Status Badges
+function updateSystemStatusBadge() {
+  const onlineCount = state.devices.filter(d => d.status === 'ONLINE').length;
+  const total = state.devices.length;
+  const isHealthy = total === 0 || (onlineCount / total) >= 0.7;
+
+  // Sidebar dynamic network info
+  const sbCidr = document.getElementById('sbNetworkCidr');
+  if (sbCidr) {
+    if (state.localNetworks.length > 0) {
+      sbCidr.textContent = state.localNetworks[0].networkCidr || state.localNetworks[0].ipAddress;
+    } else {
+      sbCidr.textContent = '192.168.1.0/24';
+    }
+  }
+
+  // Nav alert badge
+  const activeAlertsCount = state.alerts.filter(a => !a.resolved).length;
+  const alertBadge = document.getElementById('navAlertBadge');
+  if (alertBadge) {
+    alertBadge.textContent = activeAlertsCount;
+    alertBadge.style.display = activeAlertsCount > 0 ? 'inline-block' : 'none';
+  }
+
+  const topText = document.getElementById('topSysText');
+  if (topText) {
+    topText.textContent = isHealthy ? 'SYSTEM OPERATIONAL' : 'DEGRADED PERFORMANCE';
+  }
+}
+
+// 1. Render Overview KPIs
 function renderKPIs() {
   const total = state.devices.length;
   const online = state.devices.filter(d => d.status === 'ONLINE').length;
   const offline = state.devices.filter(d => d.status === 'OFFLINE').length;
-  const activeAlerts = state.alerts.filter(a => !a.resolved).length;
 
-  document.getElementById('kTotal').textContent = total;
-  document.getElementById('kOnline').textContent = `${online} / ${total}`;
-  document.getElementById('kOnlineSub').textContent = total > 0 ? `${Math.round((online / total) * 100)}% Reachable` : '0% Reachable';
-  document.getElementById('kAlerts').textContent = activeAlerts;
+  document.getElementById('kTotal').textContent = total > 0 ? total : 'N/A';
+  document.getElementById('kOnline').textContent = total > 0 ? online : 'N/A';
+  document.getElementById('kOffline').textContent = total > 0 ? offline : 'N/A';
 
+  const pctElem = document.getElementById('kOnlinePct');
+  if (pctElem) {
+    pctElem.textContent = total > 0 ? `${Math.round((online / total) * 100)}% Reachable endpoints` : 'Reachable endpoints';
+  }
+
+  // Calculate Average Latency from devices
   const validLatencies = state.devices
     .map(d => d._latency)
     .filter(l => typeof l === 'number' && !isNaN(l));
-  
-  const avgLat = validLatencies.length ? (validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length).toFixed(1) : 0;
-  
-  const avgText = document.getElementById('avgLatencyText');
-  if (avgText) avgText.textContent = `${avgLat} ms`;
 
-  const slaPct = document.getElementById('slaPct');
-  if (slaPct) slaPct.textContent = total > 0 ? `${Math.round((online / total) * 100)}%` : '100%';
+  const avgLat = validLatencies.length ? (validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length).toFixed(1) : null;
+  document.getElementById('kAvgLatency').textContent = avgLat !== null ? `${avgLat} ms` : 'N/A';
 }
 
-// Render Device Inventory Table
-function renderDeviceInventory() {
+// 2. Render Network Device Map
+function renderNetworkMap() {
+  const container = document.getElementById('networkMapContainer');
+  if (!container) return;
+
+  if (!state.devices.length) {
+    container.innerHTML = `<div class="empty-state">No devices registered. Click "Scan Network" to discover local endpoints.</div>`;
+    return;
+  }
+
+  container.innerHTML = state.devices.map(d => {
+    const isOnline = d.status === 'ONLINE';
+    const isGateway = (d.ipAddress && d.ipAddress.endsWith('.1')) || d.deviceType === 'ROUTER';
+    const typeIcon = getDeviceTypeIcon(d.deviceType);
+
+    return `
+      <div class="map-node ${isGateway ? 'gateway' : ''}" onclick="openDeviceDetails(${d.id})">
+        <span class="map-node-icon">${typeIcon}</span>
+        <div class="map-node-info">
+          <div class="map-node-name">${escapeHtml(d.name)}</div>
+          <div class="map-node-ip mono">
+            <span class="status-dot ${isOnline ? 'online' : 'offline'}"></span>
+            ${escapeHtml(d.ipAddress)}
+          </div>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+// 3. Render Activity Feed
+function renderActivityFeed() {
+  const feed = document.getElementById('overviewActivityFeed');
+  if (!feed) return;
+
+  if (!state.events.length && !state.alerts.length) {
+    feed.innerHTML = `<div class="empty-state">No recent activity events.</div>`;
+    return;
+  }
+
+  const combined = [
+    ...state.events.map(e => ({
+      title: e.eventType || 'Network Event',
+      sub: `${e.ipAddress || ''} — ${e.message || ''}`,
+      time: e.eventTime ? formatTimeAgo(e.eventTime) : '',
+      icon: '⚙',
+      color: 'var(--primary)'
+    })),
+    ...state.alerts.map(a => ({
+      title: a.alertType || 'System Alert',
+      sub: `${a.deviceName || a.ipAddress || ''} — ${a.message || ''}`,
+      time: a.timestamp ? formatTimeAgo(a.timestamp) : '',
+      icon: '⚠',
+      color: a.severity === 'CRITICAL' ? 'var(--offline)' : 'var(--warning)'
+    }))
+  ].slice(0, 8);
+
+  feed.innerHTML = combined.map(item => `
+    <div class="feed-item">
+      <div class="feed-icon" style="background: rgba(255,255,255,0.08); color:${item.color}">${item.icon}</div>
+      <div>
+        <div class="feed-title">${escapeHtml(item.title)}</div>
+        <div class="feed-sub">${escapeHtml(item.sub)} (${item.time})</div>
+      </div>
+    </div>
+  `).join('');
+}
+
+// 4. Render Device Inventory Table
+function renderDevices() {
   const tbody = document.getElementById('deviceRows');
   if (!tbody) return;
 
   const searchQuery = (document.getElementById('deviceSearch')?.value || '').toLowerCase();
-  const filterType = document.getElementById('deviceFilter')?.value || 'ALL';
+  const filterType = document.getElementById('deviceTypeFilter')?.value || 'ALL';
+  const filterStatus = document.getElementById('deviceStatusFilter')?.value || 'ALL';
 
   const filtered = state.devices.filter(d => {
-    const matchesFilter = filterType === 'ALL' || d.deviceType === filterType;
+    const matchesType = filterType === 'ALL' || d.deviceType === filterType;
+    const matchesStatus = filterStatus === 'ALL' || d.status === filterStatus;
     const matchesSearch = [d.name, d.ipAddress, d.hostname, d.macAddress, d.vendor]
       .some(field => String(field || '').toLowerCase().includes(searchQuery));
-    return matchesFilter && matchesSearch;
+    return matchesType && matchesStatus && matchesSearch;
   });
 
   if (!filtered.length) {
-    tbody.innerHTML = `<tr><td colspan="7" class="empty-state">No matching devices found in inventory.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="10" class="empty-state">No devices match filter parameters.</td></tr>`;
     return;
   }
 
   tbody.innerHTML = filtered.map(d => {
     const isOnline = d.status === 'ONLINE';
-    const statusBadge = `<span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}"><span class="status-dot"></span> ${d.status || 'UNKNOWN'}</span>`;
+    const statusBadge = `<span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}"><span class="status-dot ${isOnline ? 'online' : 'offline'}"></span> ${d.status || 'UNKNOWN'}</span>`;
     const typeClass = `type-${(d.deviceType || 'UNKNOWN').toLowerCase()}`;
     const typePill = `<span class="type-pill ${typeClass}">${d.deviceType || 'UNKNOWN'}</span>`;
-    const latency = typeof d._latency === 'number' ? `${d._latency.toFixed(1)} ms` : '—';
+    const latency = typeof d._latency === 'number' ? `${d._latency.toFixed(1)} ms` : 'N/A';
+    const lastSeen = d.lastSeen ? formatTimeAgo(d.lastSeen) : 'N/A';
 
     return `
-      <tr>
-        <td><strong>${escapeHtml(d.name)}</strong><br><small style="color:var(--text-muted);">${escapeHtml(d.vendor || d.hostname || '')}</small></td>
-        <td class="mono">${escapeHtml(d.ipAddress)}</td>
-        <td class="mono">${escapeHtml(d.macAddress || '—')}</td>
-        <td>${typePill}</td>
+      <tr onclick="openDeviceDetails(${d.id})">
         <td>${statusBadge}</td>
+        <td><strong>${escapeHtml(d.name)}</strong></td>
+        <td class="mono" style="font-weight:600;">${escapeHtml(d.ipAddress)}</td>
+        <td class="mono" style="color:var(--text-muted);">${escapeHtml(d.hostname || 'N/A')}</td>
+        <td class="mono" style="color:var(--text-subtle);">${escapeHtml(d.macAddress || 'N/A')}</td>
+        <td>${escapeHtml(d.vendor || 'N/A')}</td>
+        <td>${typePill}</td>
         <td class="mono">${latency}</td>
-        <td style="text-align:right">
-          <button class="btn btn-secondary btn-sm" onclick="pingCheckDevice(${d.id})">⚡ Ping</button>
-          <button class="btn btn-primary btn-sm" onclick="openInspectModal(${d.id})">📊 Inspect</button>
-          <button class="btn btn-danger btn-sm" onclick="deleteDevice(${d.id})">🗑</button>
+        <td style="color:var(--text-subtle);">${lastSeen}</td>
+        <td style="text-align:right" onclick="event.stopPropagation()">
+          <button class="btn btn-secondary btn-sm" onclick="openDeviceDetails(${d.id})">Inspect</button>
         </td>
       </tr>
     `;
   }).join('');
 }
 
-// Subnet Discovery Range Scan Engine
+// 5. Open Device Detail Side Drawer
+async function openDeviceDetails(deviceId) {
+  state.selectedDeviceId = deviceId;
+  const drawer = document.getElementById('deviceDrawer');
+  const overlay = document.getElementById('drawerOverlay');
+
+  if (!drawer || !overlay) return;
+
+  drawer.classList.add('open');
+  overlay.classList.add('open');
+
+  const device = state.devices.find(d => d.id === deviceId);
+  if (!device) return;
+
+  // Basic Header Info
+  document.getElementById('drawerDeviceName').textContent = device.name;
+  document.getElementById('drawerIpAddress').textContent = device.ipAddress;
+
+  const isOnline = device.status === 'ONLINE';
+  const badgeContainer = document.getElementById('drawerStatusBadgeContainer');
+  badgeContainer.innerHTML = `<span class="badge ${isOnline ? 'badge-online' : 'badge-offline'}"><span class="status-dot ${isOnline ? 'online' : 'offline'}"></span> ${device.status || 'UNKNOWN'}</span>`;
+
+  // Identity Section
+  document.getElementById('drawerHostname').textContent = device.hostname || 'N/A';
+  document.getElementById('drawerMac').textContent = device.macAddress || 'N/A';
+  document.getElementById('drawerVendor').textContent = device.vendor || 'N/A';
+  document.getElementById('drawerType').textContent = device.deviceType || 'N/A';
+  document.getElementById('drawerOs').textContent = device.osHint || 'N/A';
+
+  // Connectivity Section
+  const latVal = typeof device._latency === 'number' ? `${device._latency.toFixed(1)} ms` : 'N/A';
+  document.getElementById('drawerLatency').textContent = latVal;
+  document.getElementById('drawerPacketLoss').textContent = typeof device.packetLoss === 'number' ? `${device.packetLoss}%` : 'N/A';
+  document.getElementById('drawerLastSeen').textContent = device.lastSeen ? formatTimeAgo(device.lastSeen) : 'N/A';
+
+  // Fetch Open Ports asynchronously
+  fetchJson(`/devices/${deviceId}/ports`).then(ports => {
+    const list = document.getElementById('drawerPortsList');
+    if (!ports || !ports.length) {
+      list.innerHTML = `<div class="empty-state-sm">No open ports detected on host.</div>`;
+      return;
+    }
+    list.innerHTML = ports.map(p => `<span class="port-tag">${p.portNumber}/${p.protocol || 'TCP'} (${p.serviceName || 'Open'})</span>`).join('');
+  }).catch(() => {
+    document.getElementById('drawerPortsList').innerHTML = `<div class="empty-state-sm">No port scan data available yet.</div>`;
+  });
+
+  // Fetch SNMP Telemetry asynchronously
+  fetchJson(`/devices/${deviceId}/snmp`).then(snmp => {
+    document.getElementById('drawerCpu').textContent = snmp && typeof snmp.cpuUsage === 'number' ? `${snmp.cpuUsage}%` : 'N/A';
+    document.getElementById('drawerMemory').textContent = snmp && typeof snmp.memoryUsage === 'number' ? `${snmp.memoryUsage}%` : 'N/A';
+    document.getElementById('drawerUptime').textContent = snmp && snmp.sysUptime ? snmp.sysUptime : 'N/A';
+  }).catch(() => {
+    document.getElementById('drawerCpu').textContent = 'N/A';
+    document.getElementById('drawerMemory').textContent = 'N/A';
+    document.getElementById('drawerUptime').textContent = 'N/A';
+  });
+
+  // Fetch History asynchronously
+  fetchJson(`/history/device/${deviceId}`).then(hist => {
+    const textElem = document.getElementById('drawerHistoryChartText');
+    if (hist && hist.metrics && hist.metrics.length > 0) {
+      textElem.textContent = `Recorded ${hist.metrics.length} historical metric samples.`;
+    } else {
+      textElem.textContent = `N/A — No historical data recorded yet.`;
+    }
+  }).catch(() => {
+    document.getElementById('drawerHistoryChartText').textContent = `N/A — No historical data available yet.`;
+  });
+}
+
+function closeDeviceDetails() {
+  document.getElementById('deviceDrawer')?.classList.remove('open');
+  document.getElementById('drawerOverlay')?.classList.remove('open');
+}
+
+// Drawer Device Action Handlers
+async function runCheckOnCurrentDevice() {
+  if (!state.selectedDeviceId) return;
+  showToast('Initiating Ping Check probe...', 'info');
+  try {
+    const res = await fetchJson(`/devices/${state.selectedDeviceId}/check`, { method: 'POST' });
+    showToast(`Ping Check completed: ${res.reachable ? 'REACHABLE' : 'UNREACHABLE'} (${res.latencyMs || 0} ms)`, res.reachable ? 'success' : 'error');
+    refreshData();
+    openDeviceDetails(state.selectedDeviceId);
+  } catch (err) {
+    showToast(`Check failed: ${err.message}`, 'error');
+  }
+}
+
+async function scanPortsOnCurrentDevice() {
+  if (!state.selectedDeviceId) return;
+  showToast('Scanning host ports...', 'info');
+  try {
+    const res = await fetchJson(`/devices/${state.selectedDeviceId}/scan-ports`, { method: 'POST' });
+    showToast(`Port scan complete. Open ports: ${res.openPortsCount || 0}`, 'success');
+    openDeviceDetails(state.selectedDeviceId);
+  } catch (err) {
+    showToast(`Port scan failed: ${err.message}`, 'error');
+  }
+}
+
+async function snmpCheckOnCurrentDevice() {
+  if (!state.selectedDeviceId) return;
+  showToast('Querying SNMP metrics...', 'info');
+  try {
+    const res = await fetchJson(`/devices/${state.selectedDeviceId}/snmp-check`, { method: 'POST' });
+    showToast(`SNMP query complete. System: ${res.sysName || 'Responded'}`, 'success');
+    openDeviceDetails(state.selectedDeviceId);
+  } catch (err) {
+    showToast(`SNMP query error: ${err.message}`, 'error');
+  }
+}
+
+async function toggleMonitoringOnCurrentDevice() {
+  if (!state.selectedDeviceId) return;
+  try {
+    const res = await fetchJson(`/devices/${state.selectedDeviceId}/toggle-monitoring`, { method: 'PATCH' });
+    showToast(`Monitoring ${res.monitoringEnabled ? 'ENABLED' : 'DISABLED'} for ${res.name}`, 'success');
+    refreshData();
+    openDeviceDetails(state.selectedDeviceId);
+  } catch (err) {
+    showToast(`Failed to toggle monitoring: ${err.message}`, 'error');
+  }
+}
+
+function confirmDeleteCurrentDevice() {
+  if (!state.selectedDeviceId) return;
+  const dev = state.devices.find(d => d.id === state.selectedDeviceId);
+  if (!dev) return;
+
+  state.deviceToDeleteId = dev.id;
+  document.getElementById('deleteDeviceName').textContent = `${dev.name} (${dev.ipAddress})`;
+  document.getElementById('deleteConfirmModal')?.classList.add('open');
+}
+
+function closeDeleteConfirmModal() {
+  document.getElementById('deleteConfirmModal')?.classList.remove('open');
+  state.deviceToDeleteId = null;
+}
+
+async function executeDeleteDevice() {
+  if (!state.deviceToDeleteId) return;
+  try {
+    await fetchJson(`/devices/${state.deviceToDeleteId}`, { method: 'DELETE' });
+    showToast('Device removed from monitoring', 'success');
+    closeDeleteConfirmModal();
+    closeDeviceDetails();
+    refreshData();
+  } catch (err) {
+    showToast(`Failed to delete device: ${err.message}`, 'error');
+  }
+}
+
+// 6. Subnet Discovery Engine
 async function startSubnetScan() {
   const cidrInput = document.getElementById('subnetRangeInput').value.trim();
   const strategy = document.getElementById('discoveryStrategySelect').value;
   const workerThreads = parseInt(document.getElementById('workerThreadsInput').value) || 40;
 
   if (!cidrInput) {
-    showToast('Please enter a valid Subnet CIDR (e.g. 192.168.1.0/24)');
+    showToast('Please enter a valid Subnet CIDR (e.g. 192.168.1.0/24)', 'error');
     return;
   }
 
@@ -169,9 +484,8 @@ async function startSubnetScan() {
   btn.disabled = true;
   btn.textContent = '⏳ Scanning Range...';
   bannerText.textContent = `Probing subnet ${cidrInput} with ${strategy} strategy...`;
-  progressBar.style.width = '45%';
+  progressBar.style.width = '50%';
   importBtn.style.display = 'none';
-
   tbody.innerHTML = `<tr><td colspan="6" class="empty-state">Probing range ${cidrInput}... Please wait.</td></tr>`;
 
   const startTime = Date.now();
@@ -191,21 +505,20 @@ async function startSubnetScan() {
     progressBar.style.width = '100%';
 
     state.discoveredHosts = response.discoveredDevices || [];
-
     const totalScanned = response.totalHostsScanned || 254;
     const activeCount = state.discoveredHosts.length;
 
-    bannerText.textContent = `Discovered ${activeCount} active hosts out of ${totalScanned} scanned in ${elapsed}ms. Select hosts below to import.`;
+    bannerText.textContent = `Discovered ${activeCount} active hosts out of ${totalScanned} scanned in ${elapsed}ms. Select hosts to import.`;
     importBtn.style.display = activeCount > 0 ? 'inline-flex' : 'none';
 
     renderDiscoveryRows();
-    showToast(`Subnet scan finished. Found ${activeCount} active hosts.`);
+    showToast(`Subnet scan completed. Found ${activeCount} active hosts.`, 'success');
 
   } catch (err) {
     progressBar.style.width = '0%';
     bannerText.textContent = `Scan failed: ${err.message}`;
     tbody.innerHTML = `<tr><td colspan="6" class="empty-state" style="color:var(--offline)">Scan error: ${escapeHtml(err.message)}</td></tr>`;
-    showToast(`Scan error: ${err.message}`);
+    showToast(`Scan error: ${err.message}`, 'error');
   } finally {
     btn.disabled = false;
     btn.textContent = '⚡ Start Range Scan';
@@ -213,7 +526,17 @@ async function startSubnetScan() {
   }
 }
 
-// Render Discovery Rows Table
+async function triggerAutoDiscovery() {
+  showToast('Initiating automatic local network discovery...', 'info');
+  try {
+    const res = await fetchJson('/discovery/auto', { method: 'POST' });
+    showToast(`Auto-discovery finished. Discovered: ${res.discoveredCount || 0}, Imported: ${res.importedCount || 0}`, 'success');
+    refreshData();
+  } catch (err) {
+    showToast(`Auto-discovery failed: ${err.message}`, 'error');
+  }
+}
+
 function renderDiscoveryRows() {
   const tbody = document.getElementById('discoveryRows');
   if (!tbody) return;
@@ -247,32 +570,27 @@ function renderDiscoveryRows() {
   }).join('');
 }
 
-// Toggle Select All Checkboxes
-function toggleSelectAllDiscovered(headerCheckbox) {
+function toggleSelectAllDiscovered(masterCheckbox) {
   const checkboxes = document.querySelectorAll('.disc-check');
-  checkboxes.forEach(cb => cb.checked = headerCheckbox.checked);
+  checkboxes.forEach(cb => cb.checked = masterCheckbox.checked);
 }
 
-// Import Selected Devices
 async function importSelectedDiscoveredDevices() {
-  const checkedBoxes = document.querySelectorAll('.disc-check:checked');
-  if (!checkedBoxes.length) {
-    showToast('Please select at least one discovered host to import.');
+  const checkboxes = document.querySelectorAll('.disc-check:checked');
+  if (!checkboxes.length) {
+    showToast('Please select at least one host to import.', 'error');
     return;
   }
 
-  const selectedDevices = Array.from(checkedBoxes).map(cb => {
+  const selected = Array.from(checkboxes).map(cb => {
     const idx = parseInt(cb.dataset.index);
     const host = state.discoveredHosts[idx];
     return {
-      name: host.suggestedName || `Host ${host.ipAddress}`,
+      name: host.suggestedName || `Discovered Host ${host.ipAddress}`,
       ipAddress: host.ipAddress,
       hostname: host.hostname,
       deviceType: host.suggestedType || 'WORKSTATION',
-      vendor: host.vendor || 'Unknown',
-      macAddress: host.macAddress || null,
-      monitoringEnabled: true,
-      scanInterval: 10
+      vendor: host.vendor || 'Unknown'
     };
   });
 
@@ -280,222 +598,237 @@ async function importSelectedDiscoveredDevices() {
     const imported = await fetchJson('/discovery/import', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(selectedDevices)
+      body: JSON.stringify(selected)
     });
 
-    showToast(`Successfully imported ${imported.length} new devices to inventory!`);
+    showToast(`Successfully imported ${imported.length} new devices into inventory!`, 'success');
     await refreshData();
-    switchView('inventory');
+    switchView('devices');
   } catch (err) {
-    showToast(`Import failed: ${err.message}`);
+    showToast(`Import failed: ${err.message}`, 'error');
   }
 }
 
-// Device Actions
-async function pingCheckDevice(id) {
+// 7. Render Local Networks
+function renderLocalNetworks() {
+  const grid = document.getElementById('localNetworkGrid');
+  if (!grid) return;
+
+  if (!state.localNetworks.length) {
+    grid.innerHTML = `<div class="empty-state">No local attached network interfaces detected.</div>`;
+    return;
+  }
+
+  grid.innerHTML = state.localNetworks.map(net => `
+    <div class="net-card">
+      <div class="net-card-title">${escapeHtml(net.interfaceName || 'eth0')}</div>
+      <div class="mono" style="font-weight:700; margin-bottom:4px;">${escapeHtml(net.networkCidr || '192.168.1.0/24')}</div>
+      <div class="mono" style="font-size:11px; color:var(--text-muted);">IP: ${escapeHtml(net.ipAddress || '')}</div>
+      <div style="font-size:11px; margin-top:6px;"><span class="status-dot green"></span> Attached Interface</div>
+    </div>
+  `).join('');
+}
+
+// 8. Render Scheduler Details
+function renderSchedulerDetails() {
+  const grid = document.getElementById('schedulerDetails');
+  if (!grid) return;
+
+  const status = state.schedulerStatus || { active: true, workerPoolSize: 10 };
+
+  grid.innerHTML = `
+    <div class="net-card">
+      <div class="info-label">SCHEDULER STATE</div>
+      <div class="kpi-value ${status.active ? 'green-text' : 'red-text'}" style="font-size:20px; margin-top:4px;">
+        ${status.active ? '● RUNNING' : '○ STOPPED'}
+      </div>
+      <button class="btn btn-secondary btn-sm" style="margin-top:12px;" onclick="toggleScheduler()">
+        ${status.active ? 'Pause Scheduler' : 'Start Scheduler'}
+      </button>
+    </div>
+
+    <div class="net-card">
+      <div class="info-label">WORKER POOL SIZE</div>
+      <div class="kpi-value" style="font-size:20px; margin-top:4px;">${status.workerPoolSize || 10} Threads</div>
+      <div class="kpi-sub">Parallel reachability probes</div>
+    </div>
+
+    <div class="net-card">
+      <div class="info-label">LAST CYCLE DURATION</div>
+      <div class="kpi-value" style="font-size:20px; margin-top:4px;">${status.lastCycleDurationMs ? `${status.lastCycleDurationMs} ms` : 'N/A'}</div>
+      <div class="kpi-sub">Time taken for full scan</div>
+    </div>
+
+    <div class="net-card">
+      <div class="info-label">PROBED ENDPOINTS</div>
+      <div class="kpi-value" style="font-size:20px; margin-top:4px;">${status.lastDevicesScannedCount !== undefined ? status.lastDevicesScannedCount : 'N/A'}</div>
+      <div class="kpi-sub">Endpoints probed last cycle</div>
+    </div>
+  `;
+}
+
+async function toggleScheduler() {
+  const isActive = state.schedulerStatus && state.schedulerStatus.active;
+  const endpoint = isActive ? '/scheduler/stop' : '/scheduler/start';
   try {
-    showToast(`Pinging device #${id}...`);
-    const res = await fetchJson(`/devices/${id}/check`, { method: 'POST' });
-    showToast(`Ping ${res.reachable ? 'SUCCESS' : 'FAILED'} — Latency: ${res.latencyMs != null ? res.latencyMs.toFixed(1) + 'ms' : 'N/A'}`);
-    await refreshData();
+    const res = await fetchJson(endpoint, { method: 'POST' });
+    state.schedulerStatus = res;
+    showToast(`Scheduler ${res.active ? 'STARTED' : 'PAUSED'}`, 'success');
+    renderSchedulerDetails();
   } catch (err) {
-    showToast(`Ping check failed: ${err.message}`);
+    showToast(`Scheduler control failed: ${err.message}`, 'error');
   }
 }
 
-async function deleteDevice(id) {
-  if (!confirm('Are you sure you want to delete this device from inventory?')) return;
-  try {
-    await fetchJson(`/devices/${id}`, { method: 'DELETE' });
-    showToast('Device deleted from inventory.');
-    await refreshData();
-  } catch (err) {
-    showToast(`Delete failed: ${err.message}`);
+// 9. Render Alerts Center
+function renderAlerts() {
+  const feed = document.getElementById('fullAlertsFeed');
+  if (!feed) return;
+
+  const filtered = state.alerts.filter(a => {
+    if (state.activeAlertFilter === 'ACTIVE') return !a.resolved;
+    if (state.activeAlertFilter === 'RESOLVED') return a.resolved;
+    return true;
+  });
+
+  if (!filtered.length) {
+    feed.innerHTML = `<div class="empty-state">No alerts found for current filter.</div>`;
+    return;
   }
-}
 
-// Device Inspection Modal
-async function openInspectModal(id) {
-  const device = state.devices.find(d => d.id === id);
-  if (!device) return;
-
-  const modal = document.getElementById('inspectModal');
-  document.getElementById('inspectTitle').textContent = device.name;
-  document.getElementById('inspectSub').textContent = `${device.ipAddress} • ${device.deviceType || 'UNKNOWN'} • MAC: ${device.macAddress || 'N/A'}`;
-  
-  const body = document.getElementById('inspectBody');
-  body.innerHTML = `<div class="empty-state">Loading telemetry for ${device.ipAddress}...</div>`;
-  modal.classList.add('open');
-
-  try {
-    const [ports, metrics, events] = await Promise.all([
-      fetchJson(`/devices/${id}/ports`).catch(() => []),
-      fetchJson(`/devices/${id}/metrics`).catch(() => []),
-      fetchJson(`/devices/${id}/events`).catch(() => [])
-    ]);
-
-    body.innerHTML = `
-      <div style="display:grid; grid-template-columns: repeat(4, 1fr); gap:12px; margin-bottom:20px;">
-        <div class="kpi-card" style="padding:14px;">
-          <div class="kpi-info">
-            <div class="kpi-label">Status</div>
-            <div class="kpi-value" style="font-size:18px;">${device.status}</div>
-          </div>
+  feed.innerHTML = filtered.map(a => `
+    <div class="feed-item" style="justify-content:space-between; align-items:center;">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="feed-icon" style="background:${a.resolved ? 'rgba(100,116,139,0.15)' : 'rgba(239,68,68,0.15)'}; color:${a.resolved ? 'var(--text-subtle)' : 'var(--offline)'}">
+          ${a.resolved ? '✓' : '⚠'}
         </div>
-        <div class="kpi-card" style="padding:14px;">
-          <div class="kpi-info">
-            <div class="kpi-label">Health</div>
-            <div class="kpi-value" style="font-size:18px;">${device.healthStatus || 'NORMAL'}</div>
-          </div>
-        </div>
-        <div class="kpi-card" style="padding:14px;">
-          <div class="kpi-info">
-            <div class="kpi-label">Vendor</div>
-            <div class="kpi-value" style="font-size:16px;">${escapeHtml(device.vendor || 'N/A')}</div>
-          </div>
-        </div>
-        <div class="kpi-card" style="padding:14px;">
-          <div class="kpi-info">
-            <div class="kpi-label">Scan Interval</div>
-            <div class="kpi-value" style="font-size:18px;">${device.scanInterval || 10}s</div>
-          </div>
+        <div>
+          <div class="feed-title">${escapeHtml(a.alertType || 'System Alert')} — <span class="mono">${escapeHtml(a.ipAddress || a.deviceName || '')}</span></div>
+          <div class="feed-sub">${escapeHtml(a.message || '')} (${a.timestamp ? formatTimeAgo(a.timestamp) : ''})</div>
         </div>
       </div>
+      ${!a.resolved ? `<button class="btn btn-secondary btn-sm" onclick="resolveAlert(${a.id})">Resolve</button>` : `<span class="badge badge-existing">Resolved</span>`}
+    </div>
+  `).join('');
+}
 
-      <h4 style="margin-bottom:10px; font-size:14px; font-weight:700;">Open Port Matrix</h4>
-      <div class="port-grid">
-        ${ports.length ? ports.map(p => `
-          <div class="port-item">
-            <div class="port-number">${p.portNumber}</div>
-            <div class="port-service">${escapeHtml(p.serviceName || 'TCP')}</div>
-            <div class="${p.state === 'OPEN' ? 'port-state-open' : 'port-state-closed'}">${p.state}</div>
-          </div>
-        `).join('') : '<div class="empty-state" style="grid-column: 1/-1;">No port scan performed yet. Click "Scan Ports" below.</div>'}
+function filterAlerts(filterType) {
+  state.activeAlertFilter = filterType;
+  document.querySelectorAll('[data-alert-filter]').forEach(btn => {
+    btn.classList.toggle('active-filter', btn.dataset.alertFilter === filterType);
+  });
+  renderAlerts();
+}
+
+async function resolveAlert(alertId) {
+  try {
+    await fetchJson(`/alerts/${alertId}/resolve`, { method: 'PATCH' });
+    showToast('Alert resolved', 'success');
+    refreshData();
+  } catch (err) {
+    showToast(`Failed to resolve alert: ${err.message}`, 'error');
+  }
+}
+
+// 10. Render Reports Summary
+async function renderReportsSummary() {
+  const grid = document.getElementById('reportSummaryGrid');
+  if (!grid) return;
+
+  try {
+    const report = await fetchJson('/reports/summary').catch(() => null);
+    if (!report) {
+      grid.innerHTML = `<div class="empty-state">Unable to load report metrics.</div>`;
+      return;
+    }
+
+    grid.innerHTML = `
+      <div class="net-card">
+        <div class="info-label">TOTAL REGISTERED</div>
+        <div class="kpi-value">${report.totalDevices || 0}</div>
       </div>
-
-      <div style="margin-top:20px; text-align:right;">
-        <button class="btn btn-secondary" onclick="scanDevicePorts(${device.id})">🔌 Scan Common TCP Ports</button>
+      <div class="net-card">
+        <div class="info-label">ONLINE ENDPOINTS</div>
+        <div class="kpi-value green-text">${report.onlineDevices || 0}</div>
+      </div>
+      <div class="net-card">
+        <div class="info-label">OFFLINE ENDPOINTS</div>
+        <div class="kpi-value red-text">${report.offlineDevices || 0}</div>
+      </div>
+      <div class="net-card">
+        <div class="info-label">AVERAGE LATENCY</div>
+        <div class="kpi-value">${typeof report.averageLatencyMs === 'number' ? `${report.averageLatencyMs.toFixed(1)} ms` : 'N/A'}</div>
       </div>
     `;
-
   } catch (err) {
-    body.innerHTML = `<div class="empty-state" style="color:var(--offline)">Failed to load telemetry: ${escapeHtml(err.message)}</div>`;
+    grid.innerHTML = `<div class="empty-state">Report error: ${escapeHtml(err.message)}</div>`;
   }
 }
 
-async function scanDevicePorts(id) {
-  showToast('Scanning ports on target...');
-  try {
-    await fetchJson(`/devices/${id}/scan-ports`, { method: 'POST' });
-    showToast('Port scan completed!');
-    openInspectModal(id);
-  } catch (err) {
-    showToast(`Port scan error: ${err.message}`);
-  }
+function exportCsv() {
+  window.open(`${API_BASE}/reports/export/csv`, '_blank');
 }
 
-function closeInspectModal() {
-  document.getElementById('inspectModal').classList.remove('open');
-}
-
-// Register Modal
+// Register Device Modal Functions
 function openRegisterModal() {
-  document.getElementById('registerModal').classList.add('open');
+  document.getElementById('registerModal')?.classList.add('open');
 }
 
 function closeRegisterModal() {
-  document.getElementById('registerModal').classList.remove('open');
+  document.getElementById('registerModal')?.classList.remove('open');
 }
 
 async function submitRegisterDevice(e) {
   e.preventDefault();
-  const dto = {
-    name: document.getElementById('regName').value.trim(),
-    ipAddress: document.getElementById('regIp').value.trim(),
-    deviceType: document.getElementById('regType').value,
-    vendor: document.getElementById('regVendor').value.trim() || null,
-    monitoringEnabled: true,
-    scanInterval: 10
-  };
+  const name = document.getElementById('regName').value.trim();
+  const ipAddress = document.getElementById('regIp').value.trim();
+  const deviceType = document.getElementById('regType').value;
+  const vendor = document.getElementById('regVendor').value.trim();
 
   try {
     await fetchJson('/devices', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(dto)
+      body: JSON.stringify({ name, ipAddress, deviceType, vendor })
     });
-    showToast(`Device "${dto.name}" registered successfully!`);
+    showToast(`Registered ${name} (${ipAddress})`, 'success');
     closeRegisterModal();
-    await refreshData();
+    refreshData();
   } catch (err) {
-    showToast(`Registration failed: ${err.message}`);
+    showToast(`Registration failed: ${err.message}`, 'error');
   }
 }
 
-// Render Feeds
-function renderActivityFeed() {
-  const feed = document.getElementById('activityFeed');
-  if (!feed) return;
-
-  const alerts = state.alerts.slice(0, 6);
-  if (!alerts.length) {
-    feed.innerHTML = `<div class="empty-state">🎉 All network segments operational. No critical alerts active!</div>`;
-    return;
+// Helpers & Utilities
+function getDeviceTypeIcon(type) {
+  switch ((type || '').toUpperCase()) {
+    case 'ROUTER': return '📡';
+    case 'SERVER': return '🖧';
+    case 'WORKSTATION': return '🖥';
+    case 'SWITCH': return '🔌';
+    case 'MOBILE': return '📱';
+    default: return '💻';
   }
-
-  feed.innerHTML = alerts.map(a => `
-    <div class="feed-item">
-      <div class="feed-content">
-        <span class="status-dot" style="color:${a.severity === 'CRITICAL' ? 'var(--offline)' : 'var(--accent-amber)'}"></span>
-        <div>
-          <div class="feed-title">${escapeHtml(a.deviceName || 'Device')} <small style="color:var(--text-subtle);">(${escapeHtml(a.deviceIp || '')})</small></div>
-          <div class="feed-sub">${escapeHtml(a.message || '')}</div>
-        </div>
-      </div>
-      <button class="btn btn-secondary btn-sm" onclick="acknowledgeAlert(${a.id})">Acknowledge</button>
-    </div>
-  `).join('');
-}
-
-function renderAlertCenter() {
-  const feed = document.getElementById('fullAlertsFeed');
-  if (!feed) return;
-
-  if (!state.alerts.length) {
-    feed.innerHTML = `<div class="empty-state">No recorded alerts in system log.</div>`;
-    return;
-  }
-
-  feed.innerHTML = state.alerts.map(a => `
-    <div class="feed-item">
-      <div class="feed-content">
-        <span class="status-dot" style="color:${a.resolved ? 'var(--online)' : 'var(--offline)'}"></span>
-        <div>
-          <div class="feed-title">${escapeHtml(a.severity || 'ALERT')} • ${escapeHtml(a.deviceName || 'Device')}</div>
-          <div class="feed-sub">${escapeHtml(a.message || '')} • ${new Date(a.createdAt).toLocaleString()}</div>
-        </div>
-      </div>
-      ${!a.resolved ? `<button class="btn btn-secondary btn-sm" onclick="acknowledgeAlert(${a.id})">Acknowledge</button>` : '<span class="badge badge-online">Resolved</span>'}
-    </div>
-  `).join('');
-}
-
-async function acknowledgeAlert(id) {
-  try {
-    await fetchJson(`/alerts/${id}/acknowledge`, { method: 'POST' });
-    showToast('Alert acknowledged.');
-    await refreshData();
-  } catch (err) {
-    showToast(`Action failed: ${err.message}`);
-  }
-}
-
-async function exportCsv() {
-  window.open(`${API_BASE}/reports/export/csv`, '_blank');
 }
 
 function escapeHtml(str) {
-  return String(str || '').replace(/[&<>"']/g, c => ({
-    '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#039;'
-  }[c]));
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+function formatTimeAgo(dateInput) {
+  if (!dateInput) return 'N/A';
+  const date = new Date(dateInput);
+  const diffSec = Math.floor((Date.now() - date.getTime()) / 1000);
+
+  if (diffSec < 5) return 'just now';
+  if (diffSec < 60) return `${diffSec}s ago`;
+  if (diffSec < 3600) return `${Math.floor(diffSec / 60)}m ago`;
+  if (diffSec < 86400) return `${Math.floor(diffSec / 3600)}h ago`;
+  return date.toLocaleDateString();
 }
