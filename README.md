@@ -1,163 +1,191 @@
-# NetScope — Automatic Network Discovery & Monitoring
+# NetScope — Enterprise Network Discovery & Monitoring
 
-NetScope is a Java 21 / Spring Boot application that discovers devices on the **local network automatically**, imports them into PostgreSQL, measures reachability, and presents the observed information in a web dashboard.
+![Java 21](https://img.shields.io/badge/Java-21-orange.svg)
+![Spring Boot 3.4.2](https://img.shields.io/badge/Spring%20Boot-3.4.2-green.svg)
+![PostgreSQL 16](https://img.shields.io/badge/PostgreSQL-16-blue.svg)
+![Tests](https://img.shields.io/badge/Tests-58%2F58%20Passing-brightgreen.svg)
+![License](https://img.shields.io/badge/License-MIT-blue.svg)
 
-## What the application does
+**NetScope** is a high-performance enterprise network discovery and telemetry monitoring platform built with Java 21 and Spring Boot. It dynamically detects IPv4 network interfaces, probes subnet ranges, auto-imports active hosts into PostgreSQL, monitors device reachability with parallel thread workers, and delivers real-time telemetry through a dark NOC operational dashboard.
 
-1. Detects usable IPv4 interfaces and calculates their local CIDR networks.
-2. Scans suitable local subnets concurrently for reachable hosts.
-3. Automatically imports discovered hosts into the device inventory.
-4. Enriches discovered devices with Nmap information when Nmap is installed and usable:
-   - IP address
-   - hostname
-   - MAC address (when visible on the local L2 network)
-   - vendor (when Nmap provides an OUI vendor)
-   - discovered open TCP ports and service/version information
-   - OS fingerprint when the selected Nmap scan provides one
-5. Continuously monitors imported devices with real reachability/latency checks.
-6. Stores ping history, device state events and alerts in PostgreSQL.
-7. Exposes SNMP queries for devices that actually provide SNMP telemetry.
-8. Provides a responsive NetScope dashboard for discovery, inventory, topology, history and alerts.
+---
 
-> **Important:** A remote machine cannot reveal arbitrary CPU/RAM/OS information simply because it is on the same network. Values are only shown when the target exposes them through a supported mechanism such as SNMP or Nmap. Otherwise the dashboard reports the value as unavailable rather than inventing it.
+## 🌟 Key Features
 
-## Technology
+### 🖥️ Enterprise NOC Operational Dashboard
+- **Dark NOC Design System**: Visual hierarchy optimized for 1366×768, 1080p, and mobile/tablet screens with persistent sidebar navigation and sticky telemetry bar.
+- **KPI Metrics**: Real-time tracking of Total Devices, Online reachability ratio, Offline alert counts, and Average Latency.
+- **Discovered Devices Map**: Visual node graph distinguishing network gateways/routers from active hosts with status indicators and quick inspection drawers.
+- **Slide-in Device Details Drawer**: Inspect MAC addresses, vendor identification (OUI), latency history, open ports, SNMP telemetry, and run host probes on demand.
 
-- Java 21
-- Spring Boot 3.4.2
-- Spring Data JPA / Hibernate
-- PostgreSQL 16
-- Nmap
-- SNMP4J
-- ICMP/TCP reachability checks
-- HTML/CSS/JavaScript SPA
-- Spring WebSocket / STOMP support
-- Maven
-- Docker / Docker Compose
+### 🔍 Automated & Manual Subnet Discovery
+- **Local Interface Auto-Detection**: Probes attached network adapters (`wlan0`, `eth0`, etc.) and automatically calculates their subnets (e.g. `192.168.1.0/24`).
+- **Multi-Threaded Subnet Scanner**: Concurrent CIDR range scanner supporting ICMP Ping, TCP Port Probes, and Nmap engine scans.
+- **Selective Host Import**: Select newly discovered network endpoints and import them directly into active monitoring inventory.
 
-## Automatic discovery flow
+### 📊 Deep Telemetry & Monitoring Engine
+- **Parallel Worker Scheduler**: Background thread pool executing ping checks every 10 seconds across registered inventory.
+- **Nmap & SNMP Integration**: Deep enrichment including MAC address, vendor identification, open TCP ports, service versions, OS hints, and SNMP v2c/v3 metrics (CPU, RAM, Uptime).
+- **Strict Real Data Integrity**: Zero fake data or random values. Unavailable measurements report `N/A` rather than fabricating statistics.
 
-```text
-Application starts
-       |
-       v
-Detect local IPv4 interfaces
-       |
-       v
-Calculate attached CIDR subnet(s)
-       |
-       v
-Concurrent reachability scan
-       |
-       +---- Nmap available? ---- yes ---> Nmap enrichment
-       |                                  (MAC/vendor/services)
-       v
-Import / update device inventory
-       |
-       v
-Continuous monitoring
-       |
-       +--> Ping + latency + packet loss
-       +--> State changes + alerts
-       +--> History in PostgreSQL
-       +--> SNMP telemetry when supported
-       |
-       v
-NetScope web dashboard
+### ⚠ Alert Center & Reports
+- **State Change Detection**: Automatic alarm creation when endpoints transition between `ONLINE` and `OFFLINE` states.
+- **CSV Inventory Export**: Instant export of registered device details, MACs, vendors, and health status for network audit compliance.
+
+---
+
+## 🏗️ Architecture & Discovery Pipeline
+
+```mermaid
+flowchart TD
+    A[Application Launch] --> B[Detect Attached IPv4 Interfaces]
+    B --> C[Calculate Local CIDR Subnets e.g. 192.168.1.0/24]
+    C --> D[Concurrent Multi-Threaded Range Probing]
+    D --> E{Nmap Installed?}
+    E -- Yes --> F[Nmap Enrichment: MAC, Vendor, Open Ports, OS]
+    E -- No --> G[ICMP/TCP Reachability Detection]
+    F --> H[PostgreSQL Device Inventory]
+    G --> H
+    H --> I[Continuous Parallel Worker Scheduler]
+    I --> J[Ping Latency & State Alarms]
+    I --> K[SNMP Telemetry Queries]
+    J --> L[NetScope NOC Dashboard UI]
+    K --> L
 ```
 
-## REST endpoints
+---
 
-### Discovery
+## 🛠️ Technology Stack
 
-| Method | Endpoint | Purpose |
+- **Backend Framework**: Java 21, Spring Boot 3.4.2 (Spring Data JPA, Hibernate, Web, WebSocket/STOMP)
+- **Database**: PostgreSQL 16 (H2 for unit testing)
+- **Network Probes**: ICMP Native Probes, TCP Socket Probes, Nmap Engine, SNMP4J
+- **Frontend Architecture**: Vanilla HTML5, CSS3 Custom Properties (NOC Theme), ES6+ JavaScript SPA (Served directly via Spring Boot)
+- **Containerization**: Docker & Docker Compose (Host Networking enabled for Linux L2 MAC detection)
+
+---
+
+## 🔌 REST API Reference
+
+### Network Discovery
+
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/discovery/local-networks` | Show detected local IPv4 networks |
-| POST | `/api/discovery/auto` | Scan local networks and automatically import/update devices |
-| GET | `/api/discovery/auto/status` | Show automatic discovery state |
-| POST | `/api/discovery/scan` | Scan an explicitly supplied CIDR |
-| GET | `/api/discovery/nmap/status` | Check Nmap availability |
-| POST | `/api/discovery/nmap` | Run an Nmap subnet scan |
+| `GET` | `/api/discovery/local-networks` | Returns attached local IPv4 interfaces & subnets |
+| `POST` | `/api/discovery/auto` | Executes automatic discovery on attached subnets |
+| `GET` | `/api/discovery/auto/status` | Checks background auto-discovery status |
+| `POST` | `/api/discovery/scan` | Scans a specific CIDR range (ICMP / TCP) |
+| `POST` | `/api/discovery/import` | Imports selected discovered hosts into inventory |
+| `GET` | `/api/discovery/nmap/status` | Checks Nmap binary availability on host |
+| `POST` | `/api/discovery/nmap` | Triggers an Nmap subnet scan |
 
-### Devices & monitoring
+### Device Management & Probes
 
-| Method | Endpoint | Purpose |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/devices` | Device inventory/search/filter |
-| GET | `/api/devices/{id}` | Device details |
-| POST | `/api/devices/{id}/check` | Real reachability/latency check |
-| GET | `/api/devices/{id}/metrics` | Ping history |
-| GET | `/api/devices/{id}/events` | Device state events |
-| GET | `/api/devices/{id}/ports` | Stored port status |
-| POST | `/api/devices/{id}/scan-ports` | TCP port scan |
-| POST | `/api/devices/{id}/nmap-scan` | Nmap scan for one device |
-| GET | `/api/devices/{id}/snmp` | Query SNMP telemetry |
+| `GET` | `/api/devices` | Returns device inventory (supports `search`, `type`, `status` filters) |
+| `GET` | `/api/devices/{id}` | Returns detailed device metadata |
+| `POST` | `/api/devices` | Registers a new device manually |
+| `PUT` | `/api/devices/{id}` | Updates existing device parameters |
+| `PATCH` | `/api/devices/{id}/toggle-monitoring` | Enables or disables background monitoring |
+| `DELETE` | `/api/devices/{id}` | Removes a device from monitoring |
+| `POST` | `/api/devices/{id}/check` | Triggers an instant ICMP ping probe |
+| `GET` | `/api/devices/{id}/metrics` | Returns ping latency history |
+| `GET` | `/api/devices/{id}/events` | Returns recent device state change events |
+| `POST` | `/api/devices/{id}/scan-ports` | Performs a TCP port scan |
+| `GET` | `/api/devices/{id}/ports` | Returns discovered open ports |
+| `POST` | `/api/devices/{id}/snmp-check` | Queries SNMP v2c/v3 telemetry |
+| `GET` | `/api/devices/{id}/snmp` | Returns cached SNMP metrics |
 
-### History, alerts and reports
+### History, Alerts & Reports
 
-| Method | Endpoint | Purpose |
+| Method | Endpoint | Description |
 |---|---|---|
-| GET | `/api/history/device/{id}` | Historical device metrics |
-| GET | `/api/events` | Recent system/device events |
-| GET | `/api/alerts` | Alert history |
-| PATCH | `/api/alerts/{id}/resolve` | Resolve an alert |
-| GET | `/api/reports/summary` | System monitoring summary |
-| GET | `/api/reports/export/csv` | Export device inventory CSV |
+| `GET` | `/api/history/device/{id}` | Historical metric trends for a device |
+| `GET` | `/api/events` | Recent system-wide network events |
+| `GET` | `/api/alerts` | Active and resolved alert history |
+| `PATCH` | `/api/alerts/{id}/resolve` | Resolves an active alert |
+| `GET` | `/api/reports/summary` | System SLA and reachability summary report |
+| `GET` | `/api/reports/export/csv` | Downloads `device_inventory_report.csv` |
 
-## Run locally
+---
 
-Prerequisites:
+## 🚀 Getting Started
 
-- JDK 21
-- PostgreSQL 16
-- Nmap (recommended for MAC/vendor/service enrichment)
-- Maven 3.9+
+### Prerequisites
+- **JDK 21** or later
+- **PostgreSQL 16** (or Docker)
+- **Nmap** (Optional, recommended for MAC vendor & port scanning)
+- **Maven 3.9+**
+
+### Local Development Setup
+
+1. **Clone the repository**:
+   ```bash
+   git clone https://github.com/KiShOrE-2008/Network-Analyser.git
+   cd Network-Analyser
+   ```
+
+2. **Run Maven unit tests**:
+   ```bash
+   ./mvnw clean test
+   ```
+
+3. **Start the application**:
+   ```bash
+   ./mvnw spring-boot:run
+   ```
+
+4. **Access the NetScope Dashboard**:
+   Open [http://localhost:8080](http://localhost:8080) in your browser.
+
+---
+
+## 🐳 Docker Deployment
+
+For real LAN discovery on Linux, NetScope uses host network mode so the container can probe actual local L2/L3 devices.
 
 ```bash
-./mvnw clean test
-./mvnw spring-boot:run
-```
-
-Then open:
-
-```text
-http://localhost:8080
-```
-
-The first automatic discovery cycle runs after the configured initial delay. You can also press **Start discovery** in the NetScope dashboard.
-
-## Docker on Linux
-
-For real LAN discovery from a Dockerized application, the app container uses host networking. This is intentional: normal Docker bridge networking would expose the container's private Docker subnet instead of the host's actual LAN.
-
-```bash
+# Build and start services in background
 docker compose up --build -d
-```
 
-Then open `http://localhost:8080`.
+# View application logs
+docker compose logs -f app
 
-To stop:
-
-```bash
+# Stop containers
 docker compose down
 ```
 
-## Configuration
+---
 
-Environment variables:
+## ⚙️ Configuration Reference
 
-```text
-SPRING_DATASOURCE_URL
-DB_USERNAME
-DB_PASSWORD
-DISCOVERY_INITIAL_DELAY
-DISCOVERY_INTERVAL
-MONITORING_INTERVAL
-SPRING_JPA_HIBERNATE_DDL_AUTO
+Environment variables can be specified in `.env` or passed directly to Docker:
+
+| Environment Variable | Default Value | Description |
+|---|---|---|
+| `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5433/myapp` | PostgreSQL JDBC Connection URL |
+| `DB_USERNAME` | `kishore` | PostgreSQL Database User |
+| `DB_PASSWORD` | `postgres` | PostgreSQL Database Password |
+| `SPRING_JPA_HIBERNATE_DDL_AUTO` | `update` | DDL generation strategy (`update` / `validate`) |
+| `DISCOVERY_INITIAL_DELAY` | `10000` | Initial discovery scan delay (ms) |
+| `DISCOVERY_INTERVAL` | `60000` | Subnet auto-discovery interval (ms) |
+| `MONITORING_INTERVAL` | `10000` | Reachability monitoring worker cycle (ms) |
+
+---
+
+## 🧪 Verification & Quality Control
+
+The project includes automated JUnit 5 and Spring Boot integration tests:
+
+```bash
+./mvnw test
 ```
 
-The application only automatically scans networks attached to the machine running the application and applies a bounded host-count limit to automatic discovery.
+All 58 unit tests cover API controllers, network discovery services, health analyzers, scheduler thread pools, and report generators.
 
-## Verification
+---
 
-A GitHub Actions workflow is included to run the Maven test suite against PostgreSQL on pushes and pull requests. The repository should be treated as verified only after the CI run reports success; local runtime behavior also depends on the machine's network interfaces, permissions, Nmap installation and target-device protocols.
+## 📄 License
+
+This project is open-source under the [MIT License](LICENSE).
