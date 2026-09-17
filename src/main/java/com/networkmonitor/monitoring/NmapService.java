@@ -48,7 +48,7 @@ public class NmapService {
         command.add("-oX"); command.add("-"); command.add(target);
 
         try {
-            Process process = new ProcessBuilder(command).redirectErrorStream(true).start();
+            Process process = new ProcessBuilder(command).start();
             byte[] xmlBytes = process.getInputStream().readAllBytes();
             process.waitFor();
             if (xmlBytes.length > 0) parseNmapXml(new ByteArrayInputStream(xmlBytes), result);
@@ -122,7 +122,7 @@ public class NmapService {
             resultDto.setTotalHostsScanned(hostList.getLength());
             resultDto.setHostsUpCount(hostsUp);
         } catch (Exception ignored) {
-            // Discovery remains usable through ping if Nmap output cannot be parsed.
+            // Keep ping discovery usable when Nmap is unavailable or output cannot be parsed.
         }
     }
 }
