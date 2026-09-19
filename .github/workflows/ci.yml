@@ -9,21 +9,6 @@ on:
 jobs:
   test:
     runs-on: ubuntu-latest
-    services:
-      postgres:
-        image: postgres:16-alpine
-        env:
-          POSTGRES_DB: myapp
-          POSTGRES_USER: networkmonitor
-          POSTGRES_PASSWORD: networkmonitor
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd "pg_isready -U networkmonitor -d myapp"
-          --health-interval 5s
-          --health-timeout 5s
-          --health-retries 10
-
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -34,10 +19,6 @@ jobs:
           java-version: '21'
           cache: maven
       - name: Test
-        env:
-          SPRING_DATASOURCE_URL: jdbc:postgresql://localhost:5432/myapp
-          DB_USERNAME: networkmonitor
-          DB_PASSWORD: networkmonitor
         run: ./mvnw -B clean test
       - name: Package
         run: ./mvnw -B package -DskipTests

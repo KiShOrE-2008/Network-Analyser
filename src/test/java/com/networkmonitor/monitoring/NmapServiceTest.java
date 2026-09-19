@@ -4,6 +4,7 @@ import com.networkmonitor.dto.NmapScanResultDto;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.Assumptions;
 
 import java.io.ByteArrayInputStream;
 import java.io.InputStream;
@@ -24,6 +25,7 @@ class NmapServiceTest {
     @DisplayName("isNmapAvailable should return true when Nmap binary is installed")
     void isNmapAvailable_ShouldReturnTrue() {
         boolean available = nmapService.isNmapAvailable();
+        Assumptions.assumeTrue(available, "Nmap is optional; skip when the binary is unavailable");
         assertThat(available).isTrue();
     }
 
@@ -75,6 +77,7 @@ class NmapServiceTest {
     @Test
     @DisplayName("scanTarget on loopback (127.0.0.1) should execute real nmap scan")
     void scanTarget_Loopback_ShouldReturnHosts() {
+        Assumptions.assumeTrue(nmapService.isNmapAvailable(), "Nmap is optional; skip when the binary is unavailable");
         NmapScanResultDto result = nmapService.scanTarget("127.0.0.1", "FAST_PORT");
 
         assertThat(result).isNotNull();

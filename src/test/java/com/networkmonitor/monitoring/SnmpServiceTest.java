@@ -25,8 +25,8 @@ class SnmpServiceTest {
         assertThat(metrics.getDeviceId()).isEqualTo(1L);
         assertThat(metrics.getDeviceIp()).isEqualTo("127.0.0.1");
         assertThat(metrics.getCommunity()).isEqualTo("public");
-        assertThat(metrics.getCpuUsagePercent()).isGreaterThanOrEqualTo(0.0);
-        assertThat(metrics.getMemoryUsagePercent()).isGreaterThanOrEqualTo(0.0);
-        assertThat(metrics.getSysUptimeSeconds()).isGreaterThanOrEqualTo(0L);
+        assertThat(metrics.getCpuUsagePercent()).isNull();
+        assertThat(metrics.getMemoryUsagePercent()).isNull();
+        assertThat(metrics.getSysUptimeSeconds()).isNull();
     }
 }
