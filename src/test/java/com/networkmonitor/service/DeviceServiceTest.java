@@ -8,6 +8,7 @@ import com.networkmonitor.entity.DeviceType;
 import com.networkmonitor.entity.HealthStatus;
 import com.networkmonitor.exception.ResourceNotFoundException;
 import com.networkmonitor.repository.DeviceRepository;
+import com.networkmonitor.repository.DeviceEventRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -30,6 +31,9 @@ class DeviceServiceTest {
 
     @Mock
     private DeviceRepository deviceRepository;
+
+    @Mock
+    private DeviceEventRepository deviceEventRepository;
 
     @InjectMocks
     private DeviceService deviceService;
@@ -113,6 +117,25 @@ class DeviceServiceTest {
         assertThatThrownBy(() -> deviceService.getDeviceById(99L))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Device not found with id: 99");
+    }
+
+    @Test
+    @DisplayName("upsertDiscoveredDevice should record a network identity change")
+    void upsertDiscoveredDevice_RecordsIdentityChange() {
+        when(deviceRepository.findByIpAddress("192.168.1.1")).thenReturn(Optional.of(sampleDevice));
+        when(deviceRepository.save(any(Device.class))).thenAnswer(invocation -> invocation.getArgument(0));
+
+        com.networkmonitor.dto.DiscoveredDeviceDto discovered = new com.networkmonitor.dto.DiscoveredDeviceDto();
+        discovered.setIpAddress("192.168.1.1");
+        discovered.setMacAddress("AA:BB:CC:DD:EE:FF");
+        discovered.setHostname("router.local");
+
+        deviceService.upsertDiscoveredDevice(discovered);
+
+        verify(deviceEventRepository).save(argThat(event ->
+            "NETWORK_CHANGE".equals(event.getEventType()) &&
+            event.getMessage().contains("MAC")
+        ));
     }
 
     @Test
