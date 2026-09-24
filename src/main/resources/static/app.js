@@ -10,7 +10,7 @@ const state = {
   schedulerStatus: null,
   health: null,
   backendConnected: true,
-  activeView: 'overview',
+  activeView: 'landing',
   activeAlertFilter: 'ALL',
   selectedDeviceId: null,
   deviceToDeleteId: null
@@ -48,6 +48,7 @@ function switchView(viewId) {
 
   // Update topbar title
   const titleMap = {
+    landing: 'Project Information',
     overview: 'Overview',
     devices: 'Device Inventory',
     discovery: 'Network Discovery',
@@ -277,24 +278,29 @@ function renderActivityFeed() {
       title: e.eventType || 'Network Event',
       sub: `${e.ipAddress || ''} — ${e.message || ''}`,
       time: e.eventTime ? formatTimeAgo(e.eventTime) : '',
-      icon: '⚙',
-      color: 'var(--primary)'
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>',
+      color: 'var(--accent-cyan)',
+      bg: 'rgba(6, 182, 212, 0.15)'
     })),
     ...state.alerts.map(a => ({
       title: a.alertType || 'System Alert',
       sub: `${a.deviceName || a.ipAddress || ''} — ${a.message || ''}`,
       time: a.timestamp ? formatTimeAgo(a.timestamp) : '',
-      icon: '⚠',
-      color: a.severity === 'CRITICAL' ? 'var(--offline)' : 'var(--warning)'
+      icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>',
+      color: a.severity === 'CRITICAL' ? 'var(--offline)' : 'var(--warning)',
+      bg: a.severity === 'CRITICAL' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)'
     }))
   ].slice(0, 8);
 
   feed.innerHTML = combined.map(item => `
     <div class="feed-item">
-      <div class="feed-icon" style="background: rgba(255,255,255,0.08); color:${item.color}">${item.icon}</div>
-      <div>
-        <div class="feed-title">${escapeHtml(item.title)}</div>
-        <div class="feed-sub">${escapeHtml(item.sub)} (${item.time})</div>
+      <div class="feed-icon" style="background: ${item.bg}; color:${item.color}">${item.icon}</div>
+      <div class="feed-content">
+        <div class="feed-header">
+          <span class="feed-title">${escapeHtml(item.title)}</span>
+          <span class="feed-time">${item.time}</span>
+        </div>
+        <div class="feed-sub">${escapeHtml(item.sub)}</div>
       </div>
     </div>
   `).join('');
@@ -858,12 +864,18 @@ async function submitRegisterDevice(e) {
 // Helpers & Utilities
 function getDeviceTypeIcon(type) {
   switch ((type || '').toUpperCase()) {
-    case 'ROUTER': return '📡';
-    case 'SERVER': return '🖧';
-    case 'WORKSTATION': return '🖥';
-    case 'SWITCH': return '🔌';
-    case 'MOBILE': return '📱';
-    default: return '💻';
+    case 'ROUTER':
+      return `<svg class="device-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="2"></circle><path d="M16.24 7.76a6 6 0 0 1 0 8.49m-12.48 0a6 6 0 0 1 0-8.49m15.31-2.83a10 10 0 0 1 0 14.14m-18.14 0a10 10 0 0 1 0-14.14"></path></svg>`;
+    case 'SERVER':
+      return `<svg class="device-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="2" width="20" height="8" rx="2" ry="2"></rect><rect x="2" y="14" width="20" height="8" rx="2" ry="2"></rect><line x1="6" y1="6" x2="6.01" y2="6"></line><line x1="6" y1="18" x2="6.01" y2="18"></line></svg>`;
+    case 'WORKSTATION':
+      return `<svg class="device-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>`;
+    case 'SWITCH':
+      return `<svg class="device-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="6" width="20" height="12" rx="2"></rect><path d="M6 12h4m4 0h4"></path></svg>`;
+    case 'MOBILE':
+      return `<svg class="device-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="5" y="2" width="14" height="20" rx="2" ry="2"></rect><line x1="12" y1="18" x2="12.01" y2="18"></line></svg>`;
+    default:
+      return `<svg class="device-svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="4" y="4" width="16" height="16" rx="2"></rect><rect x="9" y="9" width="6" height="6"></rect><line x1="9" y1="1" x2="9" y2="4"></line><line x1="15" y1="1" x2="15" y2="4"></line><line x1="9" y1="20" x2="9" y2="23"></line><line x1="15" y1="20" x2="15" y2="23"></line><line x1="20" y1="9" x2="23" y2="9"></line><line x1="20" y1="15" x2="23" y2="15"></line><line x1="1" y1="9" x2="4" y2="9"></line><line x1="1" y1="15" x2="4" y2="15"></line></svg>`;
   }
 }
 

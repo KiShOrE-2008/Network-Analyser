@@ -14,6 +14,10 @@
   <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+  <!-- Ambient background orb lights -->
+  <div class="ambient-orb orb-1"></div>
+  <div class="ambient-orb orb-2"></div>
+  <div class="ambient-orb orb-3"></div>
 
   <div class="app-layout">
     <!-- persistent SIDEBAR -->
@@ -27,7 +31,11 @@
       </div>
 
       <nav class="sidebar-nav">
-        <button class="nav-item active" data-view="overview" aria-label="Overview Dashboard">
+        <button class="nav-item active" data-view="landing" aria-label="Project Information">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+          <span>Project Info</span>
+        </button>
+        <button class="nav-item" data-view="overview" aria-label="Overview Dashboard">
           <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>
           <span>Overview</span>
         </button>
@@ -86,7 +94,7 @@
       <header class="app-topbar">
         <div class="topbar-left">
           <button class="mobile-toggle" onclick="toggleSidebar()" aria-label="Toggle Navigation Menu">☰</button>
-          <h1 class="topbar-title" id="pageTitle">Overview</h1>
+          <h1 class="topbar-title" id="pageTitle">Project Information</h1>
         </div>
 
         <div class="topbar-right">
@@ -114,8 +122,137 @@
           <button class="btn btn-secondary btn-sm" onclick="refreshData()">Retry Connection</button>
         </div>
 
+        <!-- 0. PROJECT INFO LANDING VIEW -->
+        <section class="view-panel active" id="view-landing">
+          <div class="landing-container">
+            <!-- HERO HEADER -->
+            <div class="landing-hero">
+              <div class="landing-badge">
+                <span class="status-dot green"></span>
+                <span>NetScope Telemetry Platform</span>
+              </div>
+              <h1 class="landing-title">Enterprise Network Discovery & Real-Time Telemetry Console</h1>
+              <p class="landing-subtitle">
+                Comprehensive IPv4 subnet scanning, ICMP/TCP reachability monitoring, multi-threaded worker pools, and automated alert telemetry designed for network administrators.
+              </p>
+              
+              <div style="display: flex; gap: 16px; margin-top: 12px; flex-wrap: wrap; justify-content: center;">
+                <button class="btn btn-continue-lg" onclick="switchView('overview')">
+                  Continue to Monitoring Console ➔
+                </button>
+                <button class="btn btn-secondary" onclick="document.getElementById('techStackSection').scrollIntoView({behavior:'smooth'})">
+                  Explore Architecture
+                </button>
+              </div>
+            </div>
+
+            <!-- KEY CAPABILITIES GRID -->
+            <div>
+              <h2 class="section-title" style="text-align: center; margin-bottom: 24px;">CORE SYSTEM CAPABILITIES</h2>
+              <div class="kpi-grid" style="grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));">
+                <div class="kpi-card">
+                  <div class="kpi-header">
+                    <span class="kpi-label">AUTOMATED DISCOVERY</span>
+                    <span class="kpi-icon blue">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><line x1="2" y1="12" x2="22" y2="12"></line><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path></svg>
+                    </span>
+                  </div>
+                  <h3 style="font-size: 16px; margin-bottom: 8px; color: #fff;">Subnet Range Scanner</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                    Automatically detects local IPv4 interfaces (`wlan0`, `eth0`), computes CIDR ranges, and executes multi-threaded ICMP Ping & TCP port probes.
+                  </p>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-header">
+                    <span class="kpi-label">TELEMETRY POLLING</span>
+                    <span class="kpi-icon green">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                    </span>
+                  </div>
+                  <h3 style="font-size: 16px; margin-bottom: 8px; color: #fff;">10s Polling Scheduler</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                    Background scheduled threads continuously check endpoint latency, reachability status, and record high-precision metric telemetry.
+                  </p>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-header">
+                    <span class="kpi-label">ALERT ENGINE</span>
+                    <span class="kpi-icon red">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                    </span>
+                  </div>
+                  <h3 style="font-size: 16px; margin-bottom: 8px; color: #fff;">State Alarm Dispatcher</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                    Instantly detects host transitions from Healthy to Critical/Offline, raising system alarms and tracking SLA availability metrics.
+                  </p>
+                </div>
+
+                <div class="kpi-card">
+                  <div class="kpi-header">
+                    <span class="kpi-label">SNMP & PORTS</span>
+                    <span class="kpi-icon purple">
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                    </span>
+                  </div>
+                  <h3 style="font-size: 16px; margin-bottom: 8px; color: #fff;">Deep Host Inspector</h3>
+                  <p style="font-size: 13px; color: var(--text-muted); line-height: 1.5;">
+                    Queries target endpoints for active TCP ports, OS hints, MAC addresses, vendor identification, and SNMP system uptime metrics.
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- TECH STACK & SYSTEM SPECS -->
+            <div class="card" id="techStackSection">
+              <div class="card-header">
+                <div>
+                  <h3 class="card-title">PROJECT ARCHITECTURE & TECH STACK</h3>
+                  <div class="card-sub">Enterprise technology stack powering backend runtime and telemetry frontend</div>
+                </div>
+              </div>
+
+              <div class="scheduler-details-grid">
+                <div class="stat-box">
+                  <div class="stat-box-title">BACKEND RUNTIME</div>
+                  <div class="stat-box-val" style="font-size: 18px; color: var(--accent-cyan);">Java 21 LTS</div>
+                  <div class="card-sub" style="margin-top: 4px;">Spring Boot 3.4.2, Virtual Threads</div>
+                </div>
+
+                <div class="stat-box">
+                  <div class="stat-box-title">PERSISTENCE LAYER</div>
+                  <div class="stat-box-val" style="font-size: 18px; color: var(--accent-emerald);">PostgreSQL 16</div>
+                  <div class="card-sub" style="margin-top: 4px;">Spring Data JPA & Flyway Migrations</div>
+                </div>
+
+                <div class="stat-box">
+                  <div class="stat-box-title">DISCOVERY ENGINES</div>
+                  <div class="stat-box-val" style="font-size: 18px; color: var(--accent-purple);">ICMP / Nmap / SNMP</div>
+                  <div class="card-sub" style="margin-top: 4px;">Multi-threaded Executor Service</div>
+                </div>
+
+                <div class="stat-box">
+                  <div class="stat-box-title">CONSOLE FRONTEND</div>
+                  <div class="stat-box-val" style="font-size: 18px; color: var(--primary);">Vanilla Glass NOC</div>
+                  <div class="card-sub" style="margin-top: 4px;">Real-time Telemetry & Micro-animations</div>
+                </div>
+              </div>
+            </div>
+
+            <!-- BOTTOM CONTINUE CALL-TO-ACTION -->
+            <div class="card" style="text-align: center; padding: 40px; background: linear-gradient(135deg, rgba(15,23,42,0.9), rgba(30,41,59,0.7));">
+              <h2 style="font-size: 24px; font-weight: 800; margin-bottom: 8px;">Ready to inspect local network telemetry?</h2>
+              <p style="color: var(--text-muted); font-size: 14px; margin-bottom: 24px;">Launch the interactive NetScope NOC monitoring console to scan your subnet and view live devices.</p>
+              <button class="btn btn-continue-lg" onclick="switchView('overview')">
+                Continue to Monitoring Console ➔
+              </button>
+            </div>
+          </div>
+        </section>
+
         <!-- 1. OVERVIEW VIEW -->
-        <section class="view-panel active" id="view-overview">
+        <section class="view-panel" id="view-overview">
           <div class="section-hero">
             <div>
               <h2 class="section-title">NETWORK OVERVIEW</h2>
@@ -131,7 +268,9 @@
             <div class="kpi-card">
               <div class="kpi-header">
                 <span class="kpi-label">TOTAL DEVICES</span>
-                <span class="kpi-icon blue">🖥</span>
+                <span class="kpi-icon blue">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"></rect><line x1="8" y1="21" x2="16" y2="21"></line><line x1="12" y1="17" x2="12" y2="21"></line></svg>
+                </span>
               </div>
               <div class="kpi-value" id="kTotal">N/A</div>
               <div class="kpi-sub">Discovered on local network</div>
@@ -140,7 +279,9 @@
             <div class="kpi-card">
               <div class="kpi-header">
                 <span class="kpi-label">ONLINE</span>
-                <span class="kpi-icon green">⚡</span>
+                <span class="kpi-icon green">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"></polyline></svg>
+                </span>
               </div>
               <div class="kpi-value green-text" id="kOnline">N/A</div>
               <div class="kpi-sub" id="kOnlinePct">Reachable endpoints</div>
@@ -149,7 +290,9 @@
             <div class="kpi-card">
               <div class="kpi-header">
                 <span class="kpi-label">OFFLINE</span>
-                <span class="kpi-icon red">⚠</span>
+                <span class="kpi-icon red">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"></path><line x1="12" y1="9" x2="12" y2="13"></line><line x1="12" y1="17" x2="12.01" y2="17"></line></svg>
+                </span>
               </div>
               <div class="kpi-value red-text" id="kOffline">N/A</div>
               <div class="kpi-sub">Requires attention</div>
@@ -158,7 +301,9 @@
             <div class="kpi-card">
               <div class="kpi-header">
                 <span class="kpi-label">AVERAGE LATENCY</span>
-                <span class="kpi-icon purple">⏱</span>
+                <span class="kpi-icon purple">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+                </span>
               </div>
               <div class="kpi-value" id="kAvgLatency">N/A</div>
               <div class="kpi-sub">Across reachable devices</div>
