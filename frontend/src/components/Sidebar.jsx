@@ -1,6 +1,5 @@
 import React from 'react';
 import {
-  Info,
   LayoutDashboard,
   HardDrive,
   Globe,
@@ -8,71 +7,136 @@ import {
   AlertTriangle,
   FileText,
   Settings,
-  HelpCircle,
-  FileCode
+  ChevronLeft,
+  ChevronRight,
+  Database,
+  Terminal,
+  Server,
+  Gauge
 } from 'lucide-react';
 
-export default function Sidebar({ activeView, setActiveView, localNetworks, alerts }) {
-  const activeAlertsCount = (alerts || []).filter(a => !a.resolved).length;
-  const networkCidr = localNetworks && localNetworks.length > 0 
-    ? (localNetworks[0].networkCidr || localNetworks[0].ipAddress)
-    : '192.168.1.0/24';
-
-  const navItems = [
-    { id: 'landing', label: 'Project Info', icon: Info },
+export default function Sidebar({
+  activeView,
+  setActiveView,
+  collapsed,
+  setCollapsed,
+  backendConnected,
+  dbConnected,
+  nmapAvailable,
+  activeAlertsCount,
+  mobileOpen,
+  setMobileOpen
+}) {
+  const mainNav = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'devices', label: 'Devices', icon: HardDrive },
     { id: 'discovery', label: 'Discovery', icon: Globe },
     { id: 'monitoring', label: 'Monitoring', icon: Activity },
-    { id: 'alerts', label: 'Alerts', icon: AlertTriangle, badge: activeAlertsCount },
-    { id: 'reports', label: 'Reports', icon: FileText },
-    { id: 'settings', label: 'Settings', icon: Settings },
-    { id: 'help', label: 'Documentation', icon: HelpCircle },
-    { id: 'about', label: 'About', icon: FileCode },
+    { id: 'diagnostics', label: 'Diagnostics', icon: Gauge },
+    { id: 'alerts', label: 'Alerts', icon: AlertTriangle, badge: activeAlertsCount }
   ];
 
+  const secNav = [
+    { id: 'reports', label: 'Reports', icon: FileText },
+    { id: 'settings', label: 'Settings', icon: Settings }
+  ];
+
+  const handleNavClick = (id) => {
+    setActiveView(id);
+    if (mobileOpen) setMobileOpen(false);
+  };
+
   return (
-    <aside className="app-sidebar" id="sidebar">
-      <div className="sidebar-brand">
-        <div className="brand-logo">N</div>
-        <div className="brand-text">
-          <div className="brand-title">NETSCOPE</div>
-          <div className="brand-subtitle">NETWORK MONITORING</div>
-        </div>
-      </div>
+    <>
+      {/* Mobile Drawer Overlay */}
+      {mobileOpen && (
+        <div 
+          className="mobile-overlay"
+          onClick={() => setMobileOpen(false)}
+        />
+      )}
 
-      <nav className="sidebar-nav">
-        {navItems.map(item => {
-          const IconComp = item.icon;
-          const isActive = activeView === item.id;
-          return (
-            <button
-              key={item.id}
-              className={`nav-item ${isActive ? 'active' : ''}`}
-              onClick={() => setActiveView(item.id)}
-            >
-              <IconComp className="nav-icon" />
-              <span>{item.label}</span>
-              {item.badge > 0 && (
-                <span className="nav-badge">{item.badge}</span>
-              )}
-            </button>
-          );
-        })}
-      </nav>
+      <aside className={`app-sidebar ${collapsed ? 'collapsed' : ''} ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-brand">
+          <div className="brand-icon">N</div>
+          {!collapsed && (
+            <div className="brand-text">
+              <div className="brand-title">NETSCOPE</div>
+              <div className="brand-subtitle">Discovery & Monitoring</div>
+            </div>
+          )}
+          <button 
+            className="collapse-toggle-btn"
+            onClick={() => setCollapsed(!collapsed)}
+            aria-label="Toggle Navigation Sidebar"
+          >
+            {collapsed ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
+          </button>
+        </div>
 
-      <div className="sidebar-footer">
-        <div className="footer-info-row">
-          <span className="info-label">NETWORK</span>
-          <span className="info-val mono">{networkCidr}</span>
-        </div>
-        <div className="footer-info-row">
-          <span className="info-label">SYSTEM</span>
-          <span className="info-status">
-            <span className="status-dot green"></span> Operational
-          </span>
-        </div>
-      </div>
-    </aside>
+        <nav className="sidebar-nav">
+          <div className="nav-group-label">{!collapsed && 'CORE MONITORS'}</div>
+          {mainNav.map(item => {
+            const IconComp = item.icon;
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => handleNavClick(item.id)}
+                title={collapsed ? item.label : undefined}
+              >
+                <IconComp className="nav-icon" size={18} />
+                {!collapsed && <span>{item.label}</span>}
+                {!collapsed && item.badge > 0 && (
+                  <span className="nav-badge">{item.badge}</span>
+                )}
+              </button>
+            );
+          })}
+
+          <div className="nav-divider" />
+
+          <div className="nav-group-label">{!collapsed && 'UTILITIES & SYSTEM'}</div>
+          {secNav.map(item => {
+            const IconComp = item.icon;
+            const isActive = activeView === item.id;
+            return (
+              <button
+                key={item.id}
+                className={`nav-item ${isActive ? 'active' : ''}`}
+                onClick={() => handleNavClick(item.id)}
+                title={collapsed ? item.label : undefined}
+              >
+                <IconComp className="nav-icon" size={18} />
+                {!collapsed && <span>{item.label}</span>}
+              </button>
+            );
+          })}
+        </nav>
+
+        {!collapsed && (
+          <div className="sidebar-footer">
+            <div className="footer-status-item">
+              <span className={`status-dot-sm ${backendConnected ? 'green' : 'red'}`} />
+              <Server size={12} className="footer-icon" />
+              <span>Backend {backendConnected ? 'Connected' : 'Offline'}</span>
+            </div>
+
+            <div className="footer-status-item">
+              <span className={`status-dot-sm ${dbConnected ? 'green' : 'gray'}`} />
+              <Database size={12} className="footer-icon" />
+              <span>PostgreSQL {dbConnected ? 'Connected' : 'Unknown'}</span>
+            </div>
+
+            <div className="footer-status-item">
+              <span className={`status-dot-sm ${nmapAvailable ? 'green' : 'gray'}`} />
+              <Terminal size={12} className="footer-icon" />
+              <span>Nmap Engine {nmapAvailable ? 'Available' : 'Unavailable'}</span>
+            </div>
+          </div>
+        )}
+      </aside>
+    </>
   );
 }

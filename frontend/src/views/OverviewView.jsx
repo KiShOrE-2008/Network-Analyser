@@ -1,213 +1,309 @@
-import React from 'react';
-import { Monitor, Zap, AlertTriangle, Clock, RefreshCw, Shield, AlertOctagon } from 'lucide-react';
+import React, { useState } from 'react';
+import {
+  Monitor,
+  Zap,
+  AlertTriangle,
+  Clock,
+  RefreshCw,
+  Shield,
+  AlertOctagon,
+  Radio,
+  ArrowRight,
+  ShieldAlert,
+  Server,
+  Activity,
+  HardDrive
+} from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
+import EmptyState from '../components/EmptyState';
 
 export default function OverviewView({
-  devices,
-  events,
-  alerts,
+  devices = [],
+  events = [],
+  alerts = [],
+  metrics = [],
   onScanClick,
   onDeviceClick,
-  onRefresh
+  onRefresh,
+  onViewAllChanges
 }) {
+  const [timeRange, setTimeRange] = useState('1H');
+
   const total = devices.length;
   const online = devices.filter(d => d.status === 'ONLINE').length;
   const offline = devices.filter(d => d.status === 'OFFLINE').length;
-  const reachablePct = total > 0 ? Math.round((online / total) * 100) : 0;
+  const activeAlertsCount = (alerts || []).filter(a => !a.isResolved && !a.resolved).length;
 
   const validLatencies = devices
-    .map(d => d._latency)
-    .filter(l => typeof l === 'number' && !isNaN(l));
+    .map(d => d._latency !== undefined ? d._latency : null)
+    .filter(l => typeof l === 'number' && !isNaN(l) && l >= 0);
 
-  const avgLatency = validLatencies.length
+  const avgLatency = validLatencies.length > 0
     ? (validLatencies.reduce((a, b) => a + b, 0) / validLatencies.length).toFixed(1)
     : null;
 
-  // Mock sample series for Recharts sparkline graph
-  const chartData = [
-    { time: '10:00', latency: 12 },
-    { time: '10:05', latency: 15 },
-    { time: '10:10', latency: 9 },
-    { time: '10:15', latency: 22 },
-    { time: '10:20', latency: 14 },
-    { time: '10:25', latency: avgLatency ? Number(avgLatency) : 11 },
-  ];
+  // Filter events for "WHAT'S CHANGED" card
+  const newDevicesCount = events.filter(e => e.eventType === 'DEVICE_DISCOVERED').length;
+  const portChangesCount = events.filter(e => e.eventType === 'PORT_CHANGE' || (e.message && e.message.toLowerCase().includes('port'))).length;
+  const onlineEventsCount = events.filter(e => e.eventType === 'STATUS_CHANGE' && e.currentStatus === 'ONLINE').length;
+  const offlineEventsCount = events.filter(e => e.eventType === 'STATUS_CHANGE' && e.currentStatus === 'OFFLINE').length;
+  const identityChangesCount = events.filter(e => e.eventType === 'NETWORK_CHANGE' || (e.message && e.message.toLowerCase().includes('mac'))).length;
 
-  // Combined Activity items
-  const combinedActivity = [
-    ...(events || []).map(e => ({
-      id: `event-${e.id}`,
-      title: e.eventType || 'Network Event',
-      sub: `${e.ipAddress || ''} — ${e.message || ''}`,
-      time: e.eventTime ? new Date(e.eventTime).toLocaleTimeString() : 'Just now',
-      icon: Shield,
-      color: 'var(--accent-cyan)',
-      bg: 'rgba(6, 182, 212, 0.15)'
-    })),
-    ...(alerts || []).map(a => ({
-      id: `alert-${a.id}`,
-      title: a.alertType || 'System Alert',
-      sub: `${a.deviceName || a.ipAddress || ''} — ${a.message || ''}`,
-      time: a.timestamp ? new Date(a.timestamp).toLocaleTimeString() : 'Just now',
-      icon: AlertOctagon,
-      color: a.severity === 'CRITICAL' ? 'var(--offline)' : 'var(--warning)',
-      bg: a.severity === 'CRITICAL' ? 'rgba(244, 63, 94, 0.15)' : 'rgba(245, 158, 11, 0.15)'
-    }))
-  ].slice(0, 8);
+  // Real metric series formatting
+  const chartData = (metrics || []).map(m => ({
+    time: m.timestamp ? new Date(m.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : '',
+    latency: m.latencyMs !== null && m.latencyMs !== undefined ? m.latencyMs : null,
+    packetLoss: m.packetLossPercent !== null && m.packetLossPercent !== undefined ? m.packetLossPercent : null
+  })).filter(item => item.latency !== null);
 
   return (
     <section className="view-panel active">
       <div className="section-hero">
         <div>
           <h2 className="section-title">NETWORK OVERVIEW</h2>
-          <p className="section-desc">Real-time visibility into discovered devices and network health.</p>
+          <p className="section-desc">Real-time operational visibility into discovered hosts, network events, and ping telemetry.</p>
         </div>
         <button className="btn btn-primary btn-sm" onClick={onScanClick}>
-          ⚡ Scan Network
+          <Zap size={14} /> Start Discovery Scan
         </button>
       </div>
 
-      {/* KPI CARDS GRID */}
+      {/* A. KPI CARDS GRID */}
       <div className="kpi-grid">
         <div className="kpi-card">
           <div className="kpi-header">
             <span className="kpi-label">TOTAL DEVICES</span>
-            <span className="kpi-icon blue"><Monitor size={20} /></span>
+            <span className="kpi-icon blue"><Monitor size={18} /></span>
           </div>
-          <div className="kpi-value">{total > 0 ? total : 'N/A'}</div>
-          <div className="kpi-sub">Discovered on local network</div>
+          <div className="kpi-value mono">{total > 0 ? total : 0}</div>
+          <div className="kpi-sub">Discovered on subnet</div>
         </div>
 
         <div className="kpi-card green-accent">
           <div className="kpi-header">
             <span className="kpi-label">ONLINE</span>
-            <span class="kpi-icon green"><Zap size={20} /></span>
+            <span className="kpi-icon green"><Zap size={18} /></span>
           </div>
-          <div className="kpi-value green-text">{total > 0 ? online : 'N/A'}</div>
-          <div className="kpi-sub">{total > 0 ? `${reachablePct}% Reachable endpoints` : 'Reachable endpoints'}</div>
+          <div className="kpi-value green-text mono">{online}</div>
+          <div className="kpi-sub">{total > 0 ? `${Math.round((online / total) * 100)}% Reachable` : 'Reachable endpoints'}</div>
         </div>
 
         <div className="kpi-card red-accent">
           <div className="kpi-header">
             <span className="kpi-label">OFFLINE</span>
-            <span className="kpi-icon red"><AlertTriangle size={20} /></span>
+            <span className="kpi-icon red"><AlertTriangle size={18} /></span>
           </div>
-          <div className="kpi-value red-text">{total > 0 ? offline : 'N/A'}</div>
-          <div className="kpi-sub">Requires attention</div>
+          <div className="kpi-value red-text mono">{offline}</div>
+          <div className="kpi-sub">Unreachable endpoints</div>
         </div>
 
         <div className="kpi-card purple-accent">
           <div className="kpi-header">
-            <span className="kpi-label">AVERAGE LATENCY</span>
-            <span className="kpi-icon purple"><Clock size={20} /></span>
+            <span className="kpi-label">AVG LATENCY</span>
+            <span className="kpi-icon purple"><Clock size={18} /></span>
           </div>
-          <div className="kpi-value">{avgLatency !== null ? `${avgLatency} ms` : 'N/A'}</div>
-          <div className="kpi-sub">Across reachable devices</div>
+          <div className="kpi-value mono">{avgLatency !== null ? `${avgLatency} ms` : 'N/A'}</div>
+          <div className="kpi-sub">Across reachable hosts</div>
+        </div>
+
+        <div className="kpi-card amber-accent">
+          <div className="kpi-header">
+            <span className="kpi-label">ACTIVE ALERTS</span>
+            <span className="kpi-icon amber"><AlertOctagon size={18} /></span>
+          </div>
+          <div className="kpi-value amber-text mono">{activeAlertsCount}</div>
+          <div className="kpi-sub">Unresolved system alarms</div>
         </div>
       </div>
 
-      {/* LIVE LATENCY SPARKLINE GRAPH CARD */}
-      <div className="card" style={{ marginBottom: '24px' }}>
-        <div className="card-header">
-          <div>
-            <h3 className="card-title">REAL-TIME LATENCY TELEMETRY</h3>
-            <div className="card-sub">Aggregated network ping response times (ms)</div>
-          </div>
-        </div>
-        <div style={{ width: '100%', height: 180 }}>
-          <ResponsiveContainer>
-            <AreaChart data={chartData}>
-              <defs>
-                <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6366f1" stopOpacity={0.6}/>
-                  <stop offset="95%" stopColor="#6366f1" stopOpacity={0}/>
-                </linearGradient>
-              </defs>
-              <XAxis dataKey="time" stroke="#64748b" fontSize={11} />
-              <YAxis stroke="#64748b" fontSize={11} />
-              <Tooltip contentStyle={{ background: '#0f172a', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#fff' }} />
-              <Area type="monotone" dataKey="latency" stroke="#6366f1" strokeWidth={2} fillOpacity={1} fill="url(#latencyGradient)" />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
-      {/* SPLIT LAYOUT: DEVICE MAP + RECENT ACTIVITY */}
-      <div className="grid-layout-2">
-        {/* NETWORK TOPOLOGY MAP */}
+      {/* B. WHAT'S CHANGED CARD & RECENT EVENTS */}
+      <div className="grid-layout-2" style={{ marginBottom: '24px' }}>
+        {/* WHAT'S CHANGED CARD */}
         <div className="card">
           <div className="card-header">
             <div>
-              <h3 className="card-title">DISCOVERED DEVICES MAP</h3>
-              <div className="card-sub">Visual layout of active endpoints on subnet</div>
+              <h3 className="card-title">WHAT'S CHANGED</h3>
+              <div className="card-sub">Recorded network events & port exposure detections</div>
             </div>
-            <button className="btn btn-secondary btn-sm" onClick={onRefresh}>
-              <RefreshCw size={14} /> Refresh Map
+            <button className="btn btn-secondary btn-sm" onClick={onViewAllChanges}>
+              VIEW ALL CHANGES <ArrowRight size={14} />
             </button>
           </div>
 
-          <div className="network-map-container">
-            {devices.length === 0 ? (
-              <div className="empty-state">No devices registered. Click "Scan Network" to discover endpoints.</div>
-            ) : (
-              devices.map(d => {
-                const isOnline = d.status === 'ONLINE';
-                const isGateway = (d.ipAddress && d.ipAddress.endsWith('.1')) || d.deviceType === 'ROUTER';
+          <div className="changes-list">
+            <div className="change-item">
+              <span className="change-icon blue">+</span>
+              <div className="change-details">
+                <span className="change-val mono">{newDevicesCount}</span>
+                <span className="change-lbl">New Devices Discovered</span>
+              </div>
+            </div>
 
-                return (
-                  <div
-                    key={d.id}
-                    className={`map-node ${isGateway ? 'gateway' : ''}`}
-                    onClick={() => onDeviceClick(d.id)}
-                  >
-                    <span className="map-node-icon"><Monitor size={20} /></span>
-                    <div className="map-node-info">
-                      <div className="map-node-name">{d.name}</div>
-                      <div className="map-node-ip mono">
-                        <span className={`status-dot ${isOnline ? 'online' : 'offline'}`}></span>
-                        {d.ipAddress}
-                      </div>
-                    </div>
-                  </div>
-                );
-              })
-            )}
+            <div className="change-item">
+              <span className="change-icon amber">⚡</span>
+              <div className="change-details">
+                <span className="change-val mono">{portChangesCount}</span>
+                <span className="change-lbl">Port Exposure Changes</span>
+              </div>
+            </div>
+
+            <div className="change-item">
+              <span className="change-icon green">●</span>
+              <div className="change-details">
+                <span className="change-val mono">{onlineEventsCount}</span>
+                <span className="change-lbl">Devices Came Online</span>
+              </div>
+            </div>
+
+            <div className="change-item">
+              <span className="change-icon red">●</span>
+              <div className="change-details">
+                <span className="change-val mono">{offlineEventsCount}</span>
+                <span className="change-lbl">Devices Went Offline</span>
+              </div>
+            </div>
+
+            <div className="change-item">
+              <span className="change-icon cyan">↻</span>
+              <div className="change-details">
+                <span className="change-val mono">{identityChangesCount}</span>
+                <span className="change-lbl">Device Identity Changes</span>
+              </div>
+            </div>
           </div>
         </div>
 
-        {/* RECENT ACTIVITY FEED */}
+        {/* RECENT EVENTS FEED */}
         <div className="card">
           <div className="card-header">
             <div>
-              <h3 className="card-title">RECENT ACTIVITY</h3>
-              <div className="card-sub">Latest reachability state events & alerts</div>
+              <h3 className="card-title">RECENT EVENTS</h3>
+              <div className="card-sub">Latest reachability & state log stream</div>
             </div>
           </div>
 
           <div className="activity-feed">
-            {combinedActivity.length === 0 ? (
-              <div className="empty-state">No recent activity events recorded.</div>
+            {events.length === 0 ? (
+              <EmptyState 
+                title="No Recent Events" 
+                description="No network status or discovery events recorded yet."
+              />
             ) : (
-              combinedActivity.map(item => {
-                const IconComp = item.icon;
-                return (
-                  <div key={item.id} className="feed-item">
-                    <div className="feed-icon" style={{ background: item.bg, color: item.color }}>
-                      <IconComp size={16} />
+              events.slice(0, 6).map((item) => (
+                <div key={item.id} className="feed-item">
+                  <div className="feed-icon blue">
+                    <Shield size={14} />
+                  </div>
+                  <div className="feed-content">
+                    <div className="feed-header">
+                      <span className="feed-title">{item.eventType || 'NETWORK_EVENT'}</span>
+                      <span className="feed-time mono">
+                        {item.eventTime ? new Date(item.eventTime).toLocaleTimeString() : ''}
+                      </span>
                     </div>
-                    <div className="feed-content">
-                      <div className="feed-header">
-                        <span className="feed-title">{item.title}</span>
-                        <span className="feed-time">{item.time}</span>
-                      </div>
-                      <div className="feed-sub">{item.sub}</div>
+                    <div className="feed-sub mono">
+                      {item.deviceIp ? `${item.deviceIp} — ` : ''}{item.message}
                     </div>
                   </div>
-                );
-              })
+                </div>
+              ))
             )}
           </div>
         </div>
+      </div>
+
+      {/* C. REAL LATENCY CHART */}
+      <div className="card" style={{ marginBottom: '24px' }}>
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">LATENCY & PACKET LOSS TELEMETRY</h3>
+            <div className="card-sub">Real-time ping response time (ms) history</div>
+          </div>
+          <div className="btn-group">
+            {['1H', '6H', '24H', '7D'].map((range) => (
+              <button
+                key={range}
+                className={`btn btn-xs ${timeRange === range ? 'btn-primary' : 'btn-secondary'}`}
+                onClick={() => setTimeRange(range)}
+              >
+                {range}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {chartData.length === 0 ? (
+          <div className="empty-chart-notice">
+            <span>No historical telemetry available. Run ping checks or enable background monitoring.</span>
+          </div>
+        ) : (
+          <div style={{ width: '100%', height: 200 }}>
+            <ResponsiveContainer>
+              <AreaChart data={chartData}>
+                <defs>
+                  <linearGradient id="latencyGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#3B82F6" stopOpacity={0.5} />
+                    <stop offset="95%" stopColor="#3B82F6" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <XAxis dataKey="time" stroke="#64748b" fontSize={11} />
+                <YAxis stroke="#64748b" fontSize={11} unit="ms" />
+                <Tooltip 
+                  contentStyle={{ background: '#101722', border: '1px solid rgba(255,255,255,0.1)', borderRadius: '8px', color: '#F1F5F9' }} 
+                />
+                <Area type="monotone" dataKey="latency" stroke="#3B82F6" strokeWidth={2} fillOpacity={1} fill="url(#latencyGradient)" name="Latency (ms)" />
+              </AreaChart>
+            </ResponsiveContainer>
+          </div>
+        )}
+      </div>
+
+      {/* D. DISCOVERED NETWORK MAP */}
+      <div className="card">
+        <div className="card-header">
+          <div>
+            <h3 className="card-title">DISCOVERED NETWORK MAP</h3>
+            <div className="card-sub">Visual node layout of active endpoints on subnet</div>
+          </div>
+          <button className="btn btn-secondary btn-sm" onClick={onRefresh}>
+            <RefreshCw size={14} /> Refresh Nodes
+          </button>
+        </div>
+
+        {devices.length === 0 ? (
+          <EmptyState 
+            title="No Devices Discovered Yet"
+            description="Start network discovery scan to populate endpoints."
+            actionLabel="Start Discovery"
+            onAction={onScanClick}
+          />
+        ) : (
+          <div className="network-map-grid">
+            {devices.map((d) => {
+              const isOnline = d.status === 'ONLINE';
+              const isGateway = (d.ipAddress && d.ipAddress.endsWith('.1')) || d.deviceType === 'ROUTER';
+
+              return (
+                <div
+                  key={d.id}
+                  className={`map-node-card ${isGateway ? 'gateway' : ''}`}
+                  onClick={() => onDeviceClick(d.id)}
+                >
+                  <div className="node-card-top">
+                    <span className={`status-dot-sm ${isOnline ? 'green' : 'red'}`} />
+                    <span className="node-type-badge mono">{d.deviceType || 'UNKNOWN'}</span>
+                  </div>
+                  <div className="node-card-title">{d.name || d.hostname || d.ipAddress}</div>
+                  <div className="node-card-ip mono">{d.ipAddress}</div>
+                  <div className="node-card-meta">
+                    <span className="mono">{d._latency !== undefined && d._latency !== null ? `${d._latency}ms` : 'N/A'}</span>
+                    <span>{d.vendor || 'Generic'}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
       </div>
     </section>
   );

@@ -5,6 +5,7 @@
 The **Network Device Monitoring System** is an enterprise-grade backend and web application designed to continuously monitor, discover, analyze, and alert on network infrastructure devices (routers, switches, servers, printers, firewalls, and workstations).
 
 ### Core Functional Capabilities
+
 - **Automated Network Discovery**: Network range scanning via ICMP Ping, ARP, TCP port scanning, and Nmap.
 - **Continuous Real-Time Monitoring**: Periodic status & metric polling (Ping reachability, TCP port availability, latency measurement, SNMP device hardware metrics).
 - **Health Engine & Alerting**: Dynamic threshold evaluation, state change detection (`HEALTHY`, `WARNING`, `CRITICAL`, `OFFLINE`), and multi-channel notifications.
@@ -16,7 +17,7 @@ The **Network Device Monitoring System** is an enterprise-grade backend and web 
 ## 2. Technology Stack
 
 | Layer | Technology | Details / Role |
-|---|---|---|
+| --- | --- | --- |
 | **Backend Framework** | Java 21+ / Spring Boot 3.x | Core application logic, REST endpoints, scheduling, & network monitoring |
 | **Database** | PostgreSQL 16+ | Relational metric, alert, user, and device repository |
 | **Persistence** | Spring Data JPA / Hibernate | Object-Relational Mapping & transactional management |
@@ -162,7 +163,5 @@ erDiagram
 4. **Phase 4**: TCP Port Monitoring & service reachability.
 5. **Phase 5 & 6**: Automatic Subnet Network Discovery & Nmap integration.
 6. **Phase 7 & 8**: Bounded Scheduler, Worker Pool, Health Engine, & State-change Alerting.
-
-
 7. **Phase 9 & 10**: React Dashboard UI & WebSockets.
 8. **Phase 11 — 17**: SNMP Metrics, Security, Reports, Dockerization, & Verification.

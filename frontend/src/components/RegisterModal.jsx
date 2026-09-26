@@ -1,40 +1,60 @@
 import React, { useState } from 'react';
-import { X } from 'lucide-react';
+import { X, Plus } from 'lucide-react';
 
 export default function RegisterModal({ onClose, onRegister }) {
   const [name, setName] = useState('');
   const [ipAddress, setIpAddress] = useState('');
+  const [hostname, setHostname] = useState('');
   const [deviceType, setDeviceType] = useState('ROUTER');
   const [vendor, setVendor] = useState('');
+  const [model, setModel] = useState('');
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!name || !ipAddress) return;
-    onRegister({ name, ipAddress, deviceType, vendor });
+
+    setSubmitting(true);
+    try {
+      await onRegister({
+        name,
+        ipAddress,
+        hostname: hostname || null,
+        deviceType,
+        vendor: vendor || null,
+        model: model || null
+      });
+      onClose();
+    } catch (_) {
+      // Error handled by parent toast
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
-    <div className="modal-overlay">
-      <div className="modal-content">
+    <div className="modal-backdrop" onClick={onClose}>
+      <div className="modal-card" onClick={e => e.stopPropagation()}>
         <div className="modal-header">
-          <h3 style={{ color: '#fff' }}>Register New Device</h3>
-          <button className="close-btn" onClick={onClose}><X size={20} /></button>
+          <h3>Register Device Inventory</h3>
+          <button className="icon-btn" onClick={onClose}><X size={18} /></button>
         </div>
+
         <form onSubmit={handleSubmit}>
           <div className="form-group">
-            <label className="form-label">Device Name</label>
+            <label className="form-label">Device Name *</label>
             <input
               type="text"
               className="form-input"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="e.g. Core Switch"
+              placeholder="e.g. Core Router Gateway"
               required
             />
           </div>
 
           <div className="form-group">
-            <label className="form-label">IP Address</label>
+            <label className="form-label">IP Address *</label>
             <input
               type="text"
               className="form-input mono"
@@ -46,6 +66,17 @@ export default function RegisterModal({ onClose, onRegister }) {
           </div>
 
           <div className="form-group">
+            <label className="form-label">Hostname (Optional)</label>
+            <input
+              type="text"
+              className="form-input mono"
+              value={hostname}
+              onChange={(e) => setHostname(e.target.value)}
+              placeholder="router.local"
+            />
+          </div>
+
+          <div className="form-group">
             <label className="form-label">Device Type</label>
             <select
               className="form-select"
@@ -53,28 +84,46 @@ export default function RegisterModal({ onClose, onRegister }) {
               onChange={(e) => setDeviceType(e.target.value)}
             >
               <option value="ROUTER">Router</option>
+              <option value="SWITCH">Switch</option>
               <option value="SERVER">Server</option>
               <option value="WORKSTATION">Workstation</option>
-              <option value="SWITCH">Switch</option>
-              <option value="MOBILE">Mobile</option>
+              <option value="PRINTER">Printer</option>
+              <option value="FIREWALL">Firewall</option>
+              <option value="ACCESS_POINT">Access Point</option>
+              <option value="IOT">IoT Endpoint</option>
               <option value="UNKNOWN">Unknown</option>
             </select>
           </div>
 
-          <div className="form-group">
-            <label className="form-label">Vendor (Optional)</label>
-            <input
-              type="text"
-              className="form-input"
-              value={vendor}
-              onChange={(e) => setVendor(e.target.value)}
-              placeholder="e.g. Cisco"
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label className="form-label">Vendor (OUI)</label>
+              <input
+                type="text"
+                className="form-input"
+                value={vendor}
+                onChange={(e) => setVendor(e.target.value)}
+                placeholder="e.g. Cisco / TP-Link"
+              />
+            </div>
+
+            <div className="form-group">
+              <label className="form-label">Model (Optional)</label>
+              <input
+                type="text"
+                className="form-input"
+                value={model}
+                onChange={(e) => setModel(e.target.value)}
+                placeholder="e.g. Catalyst 3850"
+              />
+            </div>
           </div>
 
-          <div style={{ display: 'flex', justifyContent: 'flex-end', gap: '12px', marginTop: '24px' }}>
+          <div className="modal-footer">
             <button type="button" className="btn btn-secondary" onClick={onClose}>Cancel</button>
-            <button type="submit" className="btn btn-primary">Save & Register</button>
+            <button type="submit" className="btn btn-primary" disabled={submitting}>
+              <Plus size={16} /> {submitting ? 'Registering...' : 'Save & Register'}
+            </button>
           </div>
         </form>
       </div>

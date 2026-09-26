@@ -1,0 +1,15 @@
+# Backend Maven & Java exclusions
+target/
+*.class
+*.jar
+*.war
+*.log
+*.mv.db
+*.trace.db
+.idea/
+*.iml
+.vscode/
+.classpath
+.project
+.settings/
+.DS_Store

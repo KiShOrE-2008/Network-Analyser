@@ -13,22 +13,26 @@
 ## 🌟 Key Features
 
 ### 🖥️ Enterprise NOC Operational Dashboard
+
 - **Dark NOC Design System**: Visual hierarchy optimized for 1366×768, 1080p, and mobile/tablet screens with persistent sidebar navigation and sticky telemetry bar.
 - **KPI Metrics**: Real-time tracking of Total Devices, Online reachability ratio, Offline alert counts, and Average Latency.
 - **Discovered Devices Map**: Visual node graph distinguishing network gateways/routers from active hosts with status indicators and quick inspection drawers.
 - **Slide-in Device Details Drawer**: Inspect MAC addresses, vendor identification (OUI), latency history, open ports, SNMP telemetry, and run host probes on demand.
 
 ### 🔍 Automated & Manual Subnet Discovery
+
 - **Local Interface Auto-Detection**: Probes attached network adapters (`wlan0`, `eth0`, etc.) and automatically calculates their subnets (e.g. `192.168.1.0/24`).
 - **Multi-Threaded Subnet Scanner**: Concurrent CIDR range scanner supporting ICMP Ping, TCP Port Probes, and Nmap engine scans.
 - **Selective Host Import**: Select newly discovered network endpoints and import them directly into active monitoring inventory.
 
 ### 📊 Deep Telemetry & Monitoring Engine
+
 - **Parallel Worker Scheduler**: Background thread pool executing ping checks every 10 seconds across registered inventory.
 - **Nmap & SNMP Integration**: Deep enrichment including MAC address, vendor identification, open TCP ports, service versions, OS hints, and SNMP v2c/v3 metrics (CPU, RAM, Uptime).
 - **Strict Real Data Integrity**: Zero fake data or random values. Unavailable measurements report `N/A` rather than fabricating statistics.
 
 ### ⚠ Alert Center & Reports
+
 - **State Change Detection**: Automatic alarm creation when endpoints transition between `ONLINE` and `OFFLINE` states.
 - **CSV Inventory Export**: Instant export of registered device details, MACs, vendors, and health status for network audit compliance.
 
@@ -60,7 +64,7 @@ flowchart TD
 - **Backend Framework**: Java 21, Spring Boot 3.4.2 (Spring Data JPA, Hibernate, Web, WebSocket/STOMP)
 - **Database**: PostgreSQL 16 (H2 for unit testing)
 - **Network Probes**: ICMP Native Probes, TCP Socket Probes, Nmap Engine, SNMP4J
-- **Frontend Architecture**: Vanilla HTML5, CSS3 Custom Properties (NOC Theme), ES6+ JavaScript SPA (Served directly via Spring Boot)
+- **Frontend Architecture**: React 18, Vite 8, Vanilla CSS Custom Properties (NOC Theme)
 - **Containerization**: Docker & Docker Compose (Host Networking enabled for Linux L2 MAC detection)
 
 ---
@@ -70,7 +74,7 @@ flowchart TD
 ### Network Discovery
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | `GET` | `/api/discovery/local-networks` | Returns attached local IPv4 interfaces & subnets |
 | `POST` | `/api/discovery/auto` | Executes automatic discovery on attached subnets |
 | `GET` | `/api/discovery/auto/status` | Checks background auto-discovery status |
@@ -82,7 +86,7 @@ flowchart TD
 ### Device Management & Probes
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | `GET` | `/api/devices` | Returns device inventory (supports `search`, `type`, `status` filters) |
 | `GET` | `/api/devices/{id}` | Returns detailed device metadata |
 | `POST` | `/api/devices` | Registers a new device manually |
@@ -100,7 +104,7 @@ flowchart TD
 ### History, Alerts & Reports
 
 | Method | Endpoint | Description |
-|---|---|---|
+| --- | --- | --- |
 | `GET` | `/api/history/device/{id}` | Historical metric trends for a device |
 | `GET` | `/api/events` | Recent system-wide network events |
 | `GET` | `/api/alerts` | Active and resolved alert history |
@@ -113,6 +117,7 @@ flowchart TD
 ## 🚀 Getting Started
 
 ### Prerequisites
+
 - **JDK 21** or later
 - **PostgreSQL 16** (or Docker)
 - **Nmap** (Optional, recommended for MAC vendor & port scanning)
@@ -121,23 +126,36 @@ flowchart TD
 ### Local Development Setup
 
 1. **Clone the repository**:
+
    ```bash
    git clone https://github.com/KiShOrE-2008/Network-Analyser.git
    cd Network-Analyser
    ```
 
-2. **Run Maven unit tests**:
+2. **Run Backend Maven unit tests**:
+
    ```bash
+   cd backend
    ./mvnw clean test
    ```
 
-3. **Start the application**:
+3. **Start the Backend application**:
+
    ```bash
+   cd backend
    ./mvnw spring-boot:run
    ```
 
-4. **Access the NetScope Dashboard**:
-   Open [http://localhost:8080](http://localhost:8080) in your browser.
+4. **Start the Frontend development server**:
+
+   ```bash
+   cd frontend
+   npm install
+   npm run dev
+   ```
+
+5. **Access the NetScope Dashboard**:
+   Open [http://localhost:3000](http://localhost:3000) (Frontend Vite dev server) or [http://localhost:8080](http://localhost:8080) in your browser.
 
 ---
 
@@ -163,7 +181,7 @@ docker compose down
 Environment variables can be specified in `.env` or passed directly to Docker:
 
 | Environment Variable | Default Value | Description |
-|---|---|---|
+| --- | --- | --- |
 | `SPRING_DATASOURCE_URL` | `jdbc:postgresql://localhost:5433/myapp` | PostgreSQL JDBC Connection URL |
 | `DB_USERNAME` | `kishore` | PostgreSQL Database User |
 | `DB_PASSWORD` | `postgres` | PostgreSQL Database Password |
@@ -179,10 +197,17 @@ Environment variables can be specified in `.env` or passed directly to Docker:
 The project includes automated JUnit 5 and Spring Boot integration tests:
 
 ```bash
-./mvnw test
+cd backend && ./mvnw test
 ```
 
 All 58 unit tests cover API controllers, network discovery services, health analyzers, scheduler thread pools, and report generators.
+
+---
+
+## 📚 System Documentation & Guides
+
+- 🎨 **[UI Development & Design Guide](docs/UI_DEVELOPMENT_GUIDE.md)**: Complete NOC design system tokens, React component hierarchy, wireframe specifications, and API integration maps.
+- 🏗️ **[System Architecture](docs/ARCHITECTURE.md)**: High-level component diagrams, ER database schema, thread pool worker models, and REST reference.
 
 ---
 
