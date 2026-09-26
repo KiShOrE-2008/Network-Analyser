@@ -48,6 +48,9 @@ class MonitoringControllerTest {
     @MockitoBean
     private com.networkmonitor.repository.DeviceEventRepository eventRepository;
 
+    @MockitoBean
+    private com.networkmonitor.repository.MonitoringMetricRepository metricRepository;
+
     private PingCheckResponseDto pingResponseDto;
 
     @BeforeEach

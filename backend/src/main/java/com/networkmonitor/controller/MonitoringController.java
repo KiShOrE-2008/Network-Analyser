@@ -1,11 +1,62 @@
-package com.networkmonitor.controller;
+ package com.networkmonitor.controller;
 
-import com.networkmonitor.dto.*;import com.networkmonitor.entity.Device;import com.networkmonitor.exception.ResourceNotFoundException;import com.networkmonitor.monitoring.NmapService;import com.networkmonitor.monitoring.SnmpService;import com.networkmonitor.repository.DeviceEventRepository;import com.networkmonitor.repository.DeviceRepository;import com.networkmonitor.service.DeviceMonitoringService;import org.springframework.http.ResponseEntity;import org.springframework.web.bind.annotation.*;import java.util.List;import java.util.stream.Collectors;
-@RestController @RequestMapping("/api/devices") public class MonitoringController{
- private final DeviceMonitoringService monitoringService;private final DeviceRepository deviceRepository;private final NmapService nmapService;private final SnmpService snmpService;private final DeviceEventRepository eventRepository;
- public MonitoringController(DeviceMonitoringService m,DeviceRepository d,NmapService n,SnmpService s,DeviceEventRepository e){monitoringService=m;deviceRepository=d;nmapService=n;snmpService=s;eventRepository=e;}
- @PostMapping("/{id}/check") public ResponseEntity<PingCheckResponseDto> check(@PathVariable Long id){return ResponseEntity.ok(monitoringService.performPingCheck(id));}
- @GetMapping("/{id}/metrics") public ResponseEntity<List<MetricResponseDto>> metrics(@PathVariable Long id){return ResponseEntity.ok(monitoringService.getDeviceMetrics(id));}
+import com.networkmonitor.dto.*;
+import com.networkmonitor.entity.Device;
+import com.networkmonitor.exception.ResourceNotFoundException;
+import com.networkmonitor.monitoring.NmapService;
+import com.networkmonitor.monitoring.SnmpService;
+import com.networkmonitor.repository.DeviceEventRepository;
+import com.networkmonitor.repository.DeviceRepository;
+import com.networkmonitor.repository.MonitoringMetricRepository;
+import com.networkmonitor.service.DeviceMonitoringService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@RestController
+@RequestMapping("/api/devices")
+public class MonitoringController {
+
+    private final DeviceMonitoringService monitoringService;
+    private final DeviceRepository deviceRepository;
+    private final NmapService nmapService;
+    private final SnmpService snmpService;
+    private final DeviceEventRepository eventRepository;
+    private final MonitoringMetricRepository metricRepository;
+
+    public MonitoringController(
+            DeviceMonitoringService m,
+            DeviceRepository d,
+            NmapService n,
+            SnmpService s,
+            DeviceEventRepository e,
+            MonitoringMetricRepository metricRepository) {
+        this.monitoringService = m;
+        this.deviceRepository = d;
+        this.nmapService = n;
+        this.snmpService = s;
+        this.eventRepository = e;
+        this.metricRepository = metricRepository;
+    }
+
+    @GetMapping("/metrics/recent")
+    public ResponseEntity<List<MetricResponseDto>> getRecentMetrics() {
+        return ResponseEntity.ok(metricRepository.findTop100ByOrderByTimestampDesc()
+                .stream()
+                .map(MetricResponseDto::fromEntity)
+                .collect(Collectors.toList()));
+    }
+
+    @PostMapping("/{id}/check")
+    public ResponseEntity<PingCheckResponseDto> check(@PathVariable Long id) {
+        return ResponseEntity.ok(monitoringService.performPingCheck(id));
+    }
+
+    @GetMapping("/{id}/metrics")
+    public ResponseEntity<List<MetricResponseDto>> metrics(@PathVariable Long id) {
+        return ResponseEntity.ok(monitoringService.getDeviceMetrics(id));
+    }
  @GetMapping("/{id}/events") public ResponseEntity<List<DeviceEventDto>> events(@PathVariable Long id){if(!deviceRepository.existsById(id))throw new ResourceNotFoundException("Device not found with id: "+id);return ResponseEntity.ok(eventRepository.findTop100ByDeviceIdOrderByEventTimeDesc(id).stream().map(DeviceEventDto::from).collect(Collectors.toList()));}
  @PostMapping("/{id}/scan-ports") public ResponseEntity<PortScanResponseDto> ports(@PathVariable Long id){return ResponseEntity.ok(monitoringService.performPortScan(id));}
  @GetMapping("/{id}/ports") public ResponseEntity<List<PortStatusDto>> getPorts(@PathVariable Long id){return ResponseEntity.ok(monitoringService.getDevicePorts(id));}

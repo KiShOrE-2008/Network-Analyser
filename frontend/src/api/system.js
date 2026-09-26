@@ -11,5 +11,11 @@ export const systemApi = {
   startScheduler: () => api.post('/api/scheduler/start'),
 
   // POST /api/scheduler/stop
-  stopScheduler: () => api.post('/api/scheduler/stop')
+  stopScheduler: () => api.post('/api/scheduler/stop'),
+
+  // GET /api/settings
+  getSettings: () => api.get('/api/settings'),
+
+  // POST /api/settings
+  saveSettings: (settings) => api.post('/api/settings', settings)
 };

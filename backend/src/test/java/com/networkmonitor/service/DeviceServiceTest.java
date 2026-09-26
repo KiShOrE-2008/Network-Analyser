@@ -31,6 +31,24 @@ class DeviceServiceTest {
     @Mock
     private DeviceRepository deviceRepository;
 
+    @Mock
+    private com.networkmonitor.repository.MonitoringMetricRepository metricRepository;
+
+    @Mock
+    private com.networkmonitor.repository.DeviceEventRepository eventRepository;
+
+    @Mock
+    private com.networkmonitor.repository.AlertRepository alertRepository;
+
+    @Mock
+    private com.networkmonitor.repository.PortStatusRepository portRepository;
+
+    @Mock
+    private com.networkmonitor.repository.InterfaceMetricRepository interfaceRepository;
+
+    @Mock
+    private com.networkmonitor.repository.NetworkSpeedTestRepository speedTestRepository;
+
     @InjectMocks
     private DeviceService deviceService;
 

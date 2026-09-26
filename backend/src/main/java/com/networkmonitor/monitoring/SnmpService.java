@@ -32,10 +32,10 @@ public class SnmpService {
     public SnmpMetricDto querySnmpMetrics(Long deviceId, String ipAddress, String community) {
         String comm = (community != null && !community.isBlank()) ? community : "public";
 
-        long sysUptimeSeconds = 0L;
-        double cpuUsagePercent = 0.0;
-        double memoryUsagePercent = 0.0;
-        int interfacesCount = 0;
+        Long sysUptimeSeconds = null;
+        Double cpuUsagePercent = null;
+        Double memoryUsagePercent = null;
+        Integer interfacesCount = null;
         boolean querySuccessful = false;
 
         Snmp snmp = null;
@@ -61,13 +61,16 @@ public class SnmpService {
             pdu.add(new VariableBinding(new OID(OID_SYS_UPTIME)));
             pdu.add(new VariableBinding(new OID(OID_IF_NUMBER)));
             pdu.add(new VariableBinding(new OID(OID_HR_PROCESSOR_LOAD)));
-            pdu.add(new VariableBinding(new OID(OID_HR_MEMORY_SIZE)));
+            pdu.add(new VariableBinding(new OID("1.3.6.1.2.1.25.3.3.1.2.2"))); // Processor core 2 if available
             pdu.setType(PDU.GET);
 
             ResponseEvent<?> response = snmp.send(pdu, target);
             if (response != null && response.getResponse() != null) {
                 PDU responsePDU = response.getResponse();
                 if (responsePDU.getErrorStatus() == PDU.noError) {
+                    double totalCpuLoad = 0;
+                    int cpuCoresCount = 0;
+
                     for (VariableBinding vb : responsePDU.getVariableBindings()) {
                         String oidStr = vb.getOid().toString();
                         if (oidStr.startsWith(OID_SYS_UPTIME)) {
@@ -76,16 +79,18 @@ public class SnmpService {
                         } else if (oidStr.startsWith(OID_IF_NUMBER)) {
                             interfacesCount = vb.getVariable().toInt();
                             querySuccessful = true;
-                        } else if (oidStr.startsWith(OID_HR_PROCESSOR_LOAD)) {
-                            cpuUsagePercent = (double) vb.getVariable().toInt();
-                            querySuccessful = true;
-                        } else if (oidStr.startsWith(OID_HR_MEMORY_SIZE)) {
-                            long memKb = vb.getVariable().toLong();
-                            if (memKb > 0) {
-                                memoryUsagePercent = Math.min(100.0, (double) memKb / 1024.0 / 1024.0);
+                        } else if (oidStr.startsWith("1.3.6.1.2.1.25.3.3.1.2")) {
+                            int load = vb.getVariable().toInt();
+                            if (load >= 0 && load <= 100) {
+                                totalCpuLoad += load;
+                                cpuCoresCount++;
                             }
                             querySuccessful = true;
                         }
+                    }
+
+                    if (cpuCoresCount > 0) {
+                        cpuUsagePercent = Math.round((totalCpuLoad / cpuCoresCount) * 10.0) / 10.0;
                     }
                 }
             }
@@ -104,10 +109,10 @@ public class SnmpService {
             return createFallbackDto(deviceId, ipAddress, comm);
         }
 
-        return new SnmpMetricDto(deviceId, ipAddress, sysUptimeSeconds, cpuUsagePercent, memoryUsagePercent, interfacesCount, comm);
+        return new SnmpMetricDto(deviceId, ipAddress, sysUptimeSeconds, cpuUsagePercent, memoryUsagePercent, interfacesCount, comm, true);
     }
 
     private SnmpMetricDto createFallbackDto(Long deviceId, String ipAddress, String community) {
-        return new SnmpMetricDto(deviceId, ipAddress, 0L, 0.0, 0.0, 0, community);
+        return new SnmpMetricDto(deviceId, ipAddress, null, null, null, null, community, false);
     }
 }

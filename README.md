@@ -28,7 +28,7 @@
 ### 📊 Deep Telemetry & Monitoring Engine
 
 - **Parallel Worker Scheduler**: Background thread pool executing ping checks every 10 seconds across registered inventory.
-- **Nmap & SNMP Integration**: Deep enrichment including MAC address, vendor identification, open TCP ports, service versions, OS hints, and SNMP v2c/v3 metrics (CPU, RAM, Uptime).
+- **Nmap & SNMP Integration**: Deep enrichment including MAC address, vendor identification, open TCP ports, service versions, OS hints, and SNMP v2c metrics (CPU, RAM, Uptime).
 - **Strict Real Data Integrity**: Zero fake data or random values. Unavailable measurements report `N/A` rather than fabricating statistics.
 
 ### ⚠ Alert Center & Reports

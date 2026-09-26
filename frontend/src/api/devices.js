@@ -29,6 +29,9 @@ export const devicesApi = {
   // POST /api/devices/{id}/check
   pingCheck: (id) => api.post(`/api/devices/${id}/check`),
 
+  // GET /api/devices/metrics/recent
+  getRecentMetrics: () => api.get('/api/devices/metrics/recent'),
+
   // GET /api/devices/{id}/metrics
   getMetrics: (id) => api.get(`/api/devices/${id}/metrics`),
 

@@ -33,6 +33,7 @@ export default function App() {
   const [devices, setDevices] = useState([]);
   const [alerts, setAlerts] = useState([]);
   const [events, setEvents] = useState([]);
+  const [metrics, setMetrics] = useState([]);
   const [localNetworks, setLocalNetworks] = useState([]);
   const [selectedCidr, setSelectedCidr] = useState('');
   const [healthStatus, setHealthStatus] = useState(null);
@@ -67,10 +68,11 @@ export default function App() {
   // Primary Data Fetcher
   const fetchAllData = useCallback(async () => {
     try {
-      const [devRes, alertRes, eventRes, netRes, healthRes, schedRes] = await Promise.allSettled([
+      const [devRes, alertRes, eventRes, metricRes, netRes, healthRes, schedRes] = await Promise.allSettled([
         devicesApi.getAllDevices(),
         alertsApi.getAlerts(true),
         eventsApi.getRecentEvents(),
+        devicesApi.getRecentMetrics(),
         discoveryApi.getLocalNetworks(),
         systemApi.getHealth(),
         systemApi.getSchedulerStatus()
@@ -88,6 +90,10 @@ export default function App() {
       }
       if (eventRes.status === 'fulfilled') {
         setEvents(eventRes.value || []);
+        hasSuccess = true;
+      }
+      if (metricRes.status === 'fulfilled') {
+        setMetrics(metricRes.value || []);
         hasSuccess = true;
       }
       if (netRes.status === 'fulfilled') {
@@ -231,10 +237,11 @@ export default function App() {
     setScanning(true);
     try {
       const res = await discoveryApi.autoDiscover();
+      const count = res.devicesDiscoveredCount ?? res.devicesDiscovered ?? 0;
       addToast(
         'success',
         'Auto-Discovery Complete',
-        `Discovered ${res.devicesDiscoveredCount} hosts on local network.`
+        `Discovered ${count} hosts on local network.`
       );
       fetchAllData();
     } catch (err) {
@@ -264,7 +271,7 @@ export default function App() {
             vendor: h.vendor,
             osClue: h.osMatch,
             suggestedName: h.hostname || h.ipAddress,
-            reachable: h.status === 'up' || true,
+            reachable: h.status === 'up',
             alreadyMonitored: devices.some((d) => d.ipAddress === h.ipAddress),
             suggestedType: 'UNKNOWN'
           }))
@@ -373,6 +380,7 @@ export default function App() {
               devices={devices}
               events={events}
               alerts={alerts}
+              metrics={metrics}
               onScanClick={() => setActiveView('discovery')}
               onDeviceClick={handleOpenInspector}
               onRefresh={fetchAllData}
@@ -409,6 +417,7 @@ export default function App() {
           {activeView === 'monitoring' && (
             <MonitoringView
               devices={devices}
+              metrics={metrics}
               schedulerStatus={schedulerStatus}
               onRunPingCheck={handlePingCheck}
               onToggleScheduler={handleToggleScheduler}

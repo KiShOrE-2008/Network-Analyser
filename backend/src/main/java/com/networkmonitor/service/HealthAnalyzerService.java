@@ -22,17 +22,21 @@ public class HealthAnalyzerService {
         }
 
         if (snmpMetric != null) {
-            if (snmpMetric.getCpuUsagePercent() > 90.0 || snmpMetric.getMemoryUsagePercent() > 95.0) {
+            Double cpu = snmpMetric.getCpuUsagePercent();
+            Double mem = snmpMetric.getMemoryUsagePercent();
+            if ((cpu != null && cpu > 90.0) || (mem != null && mem > 95.0)) {
                 return HealthStatus.CRITICAL;
             }
         }
 
-        if (pingResult.getLatencyMs() > 120.0) {
+        if (pingResult.getLatencyMs() != null && pingResult.getLatencyMs() > 120.0) {
             return HealthStatus.WARNING;
         }
 
         if (snmpMetric != null) {
-            if (snmpMetric.getCpuUsagePercent() > 80.0 || snmpMetric.getMemoryUsagePercent() > 85.0) {
+            Double cpu = snmpMetric.getCpuUsagePercent();
+            Double mem = snmpMetric.getMemoryUsagePercent();
+            if ((cpu != null && cpu > 80.0) || (mem != null && mem > 85.0)) {
                 return HealthStatus.WARNING;
             }
         }

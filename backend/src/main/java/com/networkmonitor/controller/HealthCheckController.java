@@ -6,6 +6,8 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import javax.sql.DataSource;
+import java.sql.Connection;
 import java.time.LocalDateTime;
 import java.util.HashMap;
 import java.util.Map;
@@ -15,9 +17,11 @@ import java.util.Map;
 public class HealthCheckController {
 
     private final NmapService nmapService;
+    private final DataSource dataSource;
 
-    public HealthCheckController(NmapService nmapService) {
+    public HealthCheckController(NmapService nmapService, DataSource dataSource) {
         this.nmapService = nmapService;
+        this.dataSource = dataSource;
     }
 
     @GetMapping
@@ -26,7 +30,15 @@ public class HealthCheckController {
         healthInfo.put("status", "UP");
         healthInfo.put("service", "NetScope Telemetry Engine");
         healthInfo.put("version", "1.0.0-SNAPSHOT");
-        healthInfo.put("database", "Connected");
+
+        boolean dbConnected = false;
+        try (Connection conn = dataSource.getConnection()) {
+            dbConnected = conn != null && conn.isValid(2);
+        } catch (Exception e) {
+            dbConnected = false;
+        }
+
+        healthInfo.put("database", dbConnected ? "Connected" : "Disconnected");
         healthInfo.put("nmapAvailable", nmapService.isNmapAvailable());
         healthInfo.put("timestamp", LocalDateTime.now());
         return ResponseEntity.ok(healthInfo);

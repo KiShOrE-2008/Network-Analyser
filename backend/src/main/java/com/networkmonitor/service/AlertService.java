@@ -36,7 +36,7 @@ public class AlertService {
         }
 
         if (currentHealth == HealthStatus.HEALTHY) {
-            // Device recovered -> Auto-resolve all open alerts for this device
+            // Auto-resolve all open alerts for this device
             List<Alert> openAlerts = alertRepository.findByDeviceIdAndIsResolvedFalse(device.getId());
             LocalDateTime now = LocalDateTime.now();
 
@@ -48,23 +48,25 @@ public class AlertService {
                 notificationService.notifyAlertUpdate(dto);
             }
 
-            // Create recovery event
-            Alert recoveryAlert = new Alert(
-                    device,
-                    AlertType.RECOVERY,
-                    AlertSeverity.INFO,
-                    "Device " + device.getName() + " (" + device.getIpAddress() + ") state recovered to HEALTHY."
-            );
-            recoveryAlert.setResolved(true);
-            recoveryAlert.setResolvedAt(now);
-            Alert savedRecovery = alertRepository.save(recoveryAlert);
-            AlertResponseDto recDto = mapToDto(savedRecovery);
-            notificationService.notifyAlertUpdate(recDto);
-            channelNotificationService.dispatchAlertNotification(recDto);
+            // Create recovery event ONLY if transitioning from a known failure state (WARNING or CRITICAL)
+            if (previousHealth == HealthStatus.WARNING || previousHealth == HealthStatus.CRITICAL) {
+                Alert recoveryAlert = new Alert(
+                        device,
+                        AlertType.RECOVERY,
+                        AlertSeverity.INFO,
+                        "Device " + device.getName() + " (" + device.getIpAddress() + ") state recovered to HEALTHY."
+                );
+                recoveryAlert.setResolved(true);
+                recoveryAlert.setResolvedAt(now);
+                Alert savedRecovery = alertRepository.save(recoveryAlert);
+                AlertResponseDto recDto = mapToDto(savedRecovery);
+                notificationService.notifyAlertUpdate(recDto);
+                channelNotificationService.dispatchAlertNotification(recDto);
+            }
 
         } else if (currentHealth == HealthStatus.CRITICAL) {
-            AlertType type = (!pingResult.isReachable()) ? AlertType.DEVICE_OFFLINE : AlertType.PACKET_LOSS;
-            String msg = (!pingResult.isReachable())
+            AlertType type = (pingResult == null || !pingResult.isReachable()) ? AlertType.DEVICE_OFFLINE : AlertType.PACKET_LOSS;
+            String msg = (pingResult == null || !pingResult.isReachable())
                     ? "Device " + device.getName() + " (" + device.getIpAddress() + ") is UNREACHABLE/OFFLINE."
                     : String.format("High packet loss detected on %s (%s): %.1f%%", device.getName(), device.getIpAddress(), pingResult.getPacketLossPercent());
 
@@ -72,7 +74,12 @@ public class AlertService {
 
         } else if (currentHealth == HealthStatus.WARNING) {
             AlertType type = AlertType.HIGH_LATENCY;
-            String msg = String.format("High ping latency detected on %s (%s): %.2f ms", device.getName(), device.getIpAddress(), pingResult.getLatencyMs());
+            String msg;
+            if (pingResult != null && pingResult.getLatencyMs() != null && pingResult.getLatencyMs() > 120.0) {
+                msg = String.format("High ping latency detected on %s (%s): %.2f ms", device.getName(), device.getIpAddress(), pingResult.getLatencyMs());
+            } else {
+                msg = String.format("Performance warning / high threshold load detected on %s (%s)", device.getName(), device.getIpAddress());
+            }
 
             createAlertIfNotExists(device, type, AlertSeverity.WARNING, msg);
         }

@@ -38,13 +38,8 @@ public class AutomaticParameterService {
         for (Device device : deviceRepository.findAll()) {
             if (!device.isMonitoringEnabled()) continue;
             try {
-                monitoringService.performPingCheck(device.getId());
-                checked++;
-            } catch (Exception e) {
-                log.debug("Ping collection failed for {}: {}", device.getIpAddress(), e.getMessage());
-            }
-            try {
                 snmpService.querySnmpMetrics(device.getId(), device.getIpAddress(), "public");
+                checked++;
             } catch (Exception e) {
                 // SNMP is optional. Do not mark a reachable device offline because SNMP is unavailable.
                 log.debug("SNMP unavailable for {}: {}", device.getIpAddress(), e.getMessage());

@@ -27,7 +27,7 @@ export default function DiscoveryView({
   const [scanStrategy, setScanStrategy] = useState('PING');
   const [selectedImportIps, setSelectedImportIps] = useState(new Set());
 
-  const activeSubnet = selectedSubnet || (localNetworks.length > 0 ? localNetworks[0].cidr : '192.168.1.0/24');
+  const activeSubnet = selectedSubnet || (localNetworks.length > 0 ? localNetworks[0].cidr : '');
 
   const handleSubnetScan = () => {
     onScanSubnet(activeSubnet, scanStrategy);

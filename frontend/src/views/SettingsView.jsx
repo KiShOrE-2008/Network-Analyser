@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Settings, Server, Database, Terminal, Shield, RefreshCw, CheckCircle, XCircle } from 'lucide-react';
+import { systemApi } from '../api/system';
 
 export default function SettingsView({
   healthStatus = null,
@@ -13,10 +14,42 @@ export default function SettingsView({
   const [discoveryInterval, setDiscoveryInterval] = useState('60');
   const [snmpCommunity, setSnmpCommunity] = useState('public');
   const [testing, setTesting] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleSaveSettings = (e) => {
+  useEffect(() => {
+    fetchSettings();
+  }, []);
+
+  const fetchSettings = async () => {
+    try {
+      const data = await systemApi.getSettings();
+      if (data) {
+        if (data.scanInterval) setScanInterval(String(data.scanInterval));
+        if (data.discoveryInterval) setDiscoveryInterval(String(data.discoveryInterval));
+        if (data.snmpCommunity) setSnmpCommunity(data.snmpCommunity);
+      }
+    } catch (err) {
+      console.error('Failed to load system settings', err);
+    }
+  };
+
+  const handleSaveSettings = async (e) => {
     e.preventDefault();
-    if (addToast) addToast('success', 'Settings Saved', 'Monitoring configuration updated.');
+    setSaving(true);
+    try {
+      const updated = {
+        scanInterval: parseInt(scanInterval, 10) || 10,
+        discoveryInterval: parseInt(discoveryInterval, 10) || 60,
+        snmpCommunity: snmpCommunity || 'public',
+        schedulerEnabled: schedulerStatus?.active ?? true
+      };
+      await systemApi.saveSettings(updated);
+      if (addToast) addToast('success', 'Settings Saved', 'Monitoring configuration persisted successfully.');
+    } catch (err) {
+      if (addToast) addToast('error', 'Save Failed', err.message);
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleTestBackend = async () => {

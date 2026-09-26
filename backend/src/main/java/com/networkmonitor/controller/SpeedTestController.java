@@ -33,10 +33,13 @@ public class SpeedTestController {
     @PostMapping("/upload")
     public ResponseEntity<SpeedTestResultDto> uploadPayload(
             @RequestBody(required = false) byte[] payload) {
-        long sizeBytes = (payload != null) ? payload.length : 0;
+        if (payload == null || payload.length == 0) {
+            return ResponseEntity.badRequest().build();
+        }
         SpeedTestResultDto result = new SpeedTestResultDto();
         result.setTestType("BROWSER_TO_SERVER");
         result.setStatus("SUCCESS");
+        result.setDurationMs(0L);
         return ResponseEntity.ok(result);
     }
 

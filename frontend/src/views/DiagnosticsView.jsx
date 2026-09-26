@@ -80,8 +80,8 @@ export default function DiagnosticsView({ addToast }) {
       setUploadMbps(ulMbps);
 
       // 3. Ping Latency & Jitter
-      const lat = gateway?.latencyMs || 2.4;
-      const jit = gateway?.jitterMs || 0.6;
+      const lat = gateway?.latencyMs ?? null;
+      const jit = gateway?.jitterMs ?? null;
       setLatencyMs(lat);
       setJitterMs(jit);
 
@@ -147,7 +147,7 @@ export default function DiagnosticsView({ addToast }) {
             <span className="kpi-label">DEFAULT GATEWAY</span>
             <span className="kpi-icon green"><Shield size={18} /></span>
           </div>
-          <div className="kpi-value green-text mono">{gateway?.gatewayIp || '192.168.1.1'}</div>
+          <div className="kpi-value green-text mono">{gateway?.gatewayIp || '--'}</div>
           <div className="kpi-sub mono">
             {gateway?.reachable ? '● ONLINE' : '🔴 UNREACHABLE'} • Latency: {gateway?.latencyMs !== null && gateway?.latencyMs !== undefined ? `${gateway.latencyMs} ms` : 'N/A'}
           </div>
@@ -159,9 +159,9 @@ export default function DiagnosticsView({ addToast }) {
             <span className="kpi-label">LOCAL INTERFACE</span>
             <span className="kpi-icon blue"><Wifi size={18} /></span>
           </div>
-          <div className="kpi-value blue-text mono">{gateway?.localIp || '192.168.1.15'}</div>
+          <div className="kpi-value blue-text mono">{gateway?.localIp || '--'}</div>
           <div className="kpi-sub mono">
-            Iface: {gateway?.interfaceName || 'wlan0'} • Subnet: {gateway?.networkCidr || '192.168.1.0/24'}
+            Iface: {gateway?.interfaceName || '--'} • Subnet: {gateway?.networkCidr || '--'}
           </div>
         </div>
 

@@ -38,26 +38,8 @@ public class InterfaceMonitoringService {
             return existing.stream().map(InterfaceMetricDto::fromEntity).collect(Collectors.toList());
         }
 
-        // If no metrics recorded yet, attempt SNMP query or create initial default interface entry
-        List<InterfaceMetric> newMetrics = new ArrayList<>();
-        InterfaceMetric eth0 = new InterfaceMetric();
-        eth0.setDeviceId(deviceId);
-        eth0.setInterfaceName("eth0");
-        eth0.setRxBytes(10485760L);
-        eth0.setTxBytes(5242880L);
-        eth0.setRxPackets(8192L);
-        eth0.setTxPackets(4096L);
-        eth0.setRxErrors(0L);
-        eth0.setTxErrors(0L);
-        eth0.setRxDrops(0L);
-        eth0.setTxDrops(0L);
-        eth0.setRxMbps(12.4);
-        eth0.setTxMbps(6.2);
-
-        interfaceMetricRepository.save(eth0);
-        newMetrics.add(eth0);
-
-        return newMetrics.stream().map(InterfaceMetricDto::fromEntity).collect(Collectors.toList());
+        // Return existing interface metrics recorded for this device
+        return existing.stream().map(InterfaceMetricDto::fromEntity).collect(Collectors.toList());
     }
 
     public InterfaceMetricDto recordInterfaceMetric(InterfaceMetricDto dto) {

@@ -25,6 +25,6 @@ export const diagnosticsApi = {
   // POST /api/devices/{id}/interface-check
   checkDeviceInterfaces: (id) => api.post(`/api/devices/${id}/interface-check`),
 
-  // GET /api/devices/{id}/diagnostics (Device diagnostics fallback)
-  getDeviceDiagnostics: (id) => api.get('/api/diagnostics/gateway')
+  // GET /api/diagnostics/devices/{id} (Device diagnostics)
+  getDeviceDiagnostics: (id) => api.get(`/api/diagnostics/devices/${id}`)
 };

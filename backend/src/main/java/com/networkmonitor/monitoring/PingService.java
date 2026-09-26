@@ -87,7 +87,16 @@ public class PingService {
             if (isReachable) {
                 result.setReachable(true);
                 result.setPacketLossPercent(packetLoss != null ? packetLoss : 0.0);
-                result.setLatencyMs(avgLatency != null ? avgLatency : 1.0);
+                
+                // Fallback line-by-line time=XX ms regex if summary rtt wasn't present
+                if (avgLatency == null) {
+                    Matcher lineTimeMatcher = Pattern.compile("time[=<](\\d+(?:\\.\\d+)?)").matcher(response);
+                    if (lineTimeMatcher.find()) {
+                        avgLatency = Double.parseDouble(lineTimeMatcher.group(1));
+                    }
+                }
+                
+                result.setLatencyMs(avgLatency);
             } else {
                 return fallbackJavaPing(ipAddress, timeoutSeconds * 1000);
             }

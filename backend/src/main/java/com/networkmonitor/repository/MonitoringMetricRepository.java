@@ -12,4 +12,6 @@ public interface MonitoringMetricRepository extends JpaRepository<MonitoringMetr
     List<MonitoringMetric> findByDeviceIdOrderByTimestampDesc(Long deviceId);
 
     List<MonitoringMetric> findTop50ByDeviceIdOrderByTimestampDesc(Long deviceId);
+
+    List<MonitoringMetric> findTop100ByOrderByTimestampDesc();
 }

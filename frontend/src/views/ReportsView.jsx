@@ -49,7 +49,7 @@ export default function ReportsView({ addToast }) {
           <div className="kpi-value green-text mono">
             {summary && typeof summary.slaAvailabilityPercent === 'number' 
               ? `${summary.slaAvailabilityPercent.toFixed(1)}%` 
-              : '99.4%'}
+              : 'N/A'}
           </div>
           <div className="kpi-sub">Overall uptime ratio</div>
         </div>
